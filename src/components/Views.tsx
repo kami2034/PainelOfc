@@ -23,9 +23,292 @@ import {
   Camera,
   ShoppingBag,
   CreditCard,
-  Gift
+  Gift,
+  ShieldCheck,
+  ShieldAlert,
+  Plus,
+  UserPlus,
+  Edit2,
+  Users,
+  Newspaper,
+  BookOpen,
+  Anchor,
+  Crown,
+  ChevronRight,
+  MessageSquareWarning,
+  Image as ImageIcon,
+  ArrowLeft,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
+
+// --- GUIA VIEW ---
+export function GuiaView() {
+  const { isEcoMode, myMember, clan, updateClanGuideImage } = useClan();
+  const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
+
+  const isLeader = myMember?.role === 'leader';
+  const displayImage = clan?.guideImagePost1 || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isLeader) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        updateClanGuideImage(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  if (selectedGuide === 'evoluir') {
+    return (
+      <div className="flex flex-col gap-8 p-4 md:p-8 max-w-4xl mx-auto w-full pb-20">
+        <button 
+          onClick={() => setSelectedGuide(null)}
+          className="flex items-center gap-2 text-gaming-gold font-black uppercase text-[10px] tracking-widest hover:translate-x-[-4px] transition-transform w-fit"
+        >
+          <ArrowLeft size={16} /> Voltar ao Guia
+        </button>
+
+        <div className="bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 md:p-12 flex flex-col gap-8 shadow-2xl relative overflow-hidden">
+          {!isEcoMode && (
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Zap size={120} />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <h2 className="text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter">
+              Como Evoluir <span className="text-gaming-gold">Rápido no Jogo</span>
+            </h2>
+          </div>
+
+          {/* Post Tabs Selection */}
+          <div className="flex gap-4 border-b border-white/5 pb-4 overflow-x-auto custom-scrollbar">
+             <button className="px-6 py-2 bg-gaming-gold text-black rounded-full font-black uppercase text-[10px] tracking-[0.2em] whitespace-nowrap">Post #1: Missões</button>
+             <button className="px-6 py-2 bg-white/5 border border-white/10 text-white/40 rounded-full font-black uppercase text-[10px] tracking-[0.2em] whitespace-nowrap cursor-not-allowed">Post #2: Em Breve</button>
+          </div>
+
+          <div className="flex flex-col gap-10">
+             {/* Post 1 Content */}
+             <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-4">
+                   <h4 className="font-display font-black uppercase text-2xl text-gaming-gold italic flex items-center gap-3">
+                      <Zap size={24} fill="currentColor" /> 
+                      Post 1: Missões Diárias
+                   </h4>
+                   <p className="text-base text-white/80 font-bold uppercase italic leading-relaxed tracking-wide">
+                      A interação mais importante ao logar. É através dela que você garante itens cruciais para o seu desenvolvimento acelerado.
+                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">⚡ Aceleradores de Construção</span>
+                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Fundamental para garantir que suas melhorias de base sejam concluídas em tempo recorde.</p>
+                   </div>
+                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">🐀 Isca de Rato</span>
+                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Item vital para o evento "Caça ao Rato". Será melhor explicado no quadro de missões antes da Raid.</p>
+                   </div>
+                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">🐦 Essência de Corvo</span>
+                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Recurso necessário para realizar o upgrade do Corvo na Cabana do Corvo.</p>
+                   </div>
+                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">💎 Diamantes</span>
+                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Recurso final necessário para recursos avançados. Não gaste à toa no jogo!</p>
+                   </div>
+                </div>
+
+                <div className="p-8 bg-red-500/10 border border-red-500/20 rounded-3xl relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-6 opacity-10">
+                      <AlertTriangle size={64} />
+                   </div>
+                   <div className="flex items-center gap-2 mb-4">
+                      <ShieldCheck size={20} className="text-red-500" />
+                      <span className="text-[12px] text-red-500 font-black uppercase tracking-[0.3em]">RECOMENDAÇÃO DO LÍDER</span>
+                   </div>
+                   <p className="text-sm text-white/60 font-bold uppercase italic leading-relaxed">
+                      "Mantenha o foco em acumular diamantes. Eles serão seu maior trunfo para dominar recursos em fases mais avançadas da guerra."
+                   </p>
+                </div>
+
+                {/* Single Visual Support Image at the bottom */}
+                <div className="flex flex-col gap-4 mt-4">
+                   <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-black text-white/30 tracking-[0.3em]">Referência Visual: Menu de Missões</span>
+                      {isLeader && <span className="text-[8px] text-gaming-gold font-black uppercase italic">Toque na imagem para alterar permanentemente</span>}
+                   </div>
+                   <div className="aspect-video md:h-[400px] rounded-[2.5rem] border border-white/10 overflow-hidden bg-black/40 group relative">
+                      <img src={displayImage} alt="Guia de Missões" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                      {isLeader && (
+                        <label className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-4">
+                           <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                              <ImageIcon size={32} className="text-gaming-gold" />
+                           </div>
+                           <div className="text-center">
+                              <span className="text-xs font-black uppercase tracking-[0.2em] text-white block">Substituir Imagem</span>
+                              <span className="text-[8px] font-bold text-white/40 uppercase">Formatos: JPG, PNG, WEBP</span>
+                           </div>
+                           <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                        </label>
+                      )}
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-8 p-4 md:p-8 max-w-6xl mx-auto w-full pb-20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex flex-col">
+           <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-gaming-gold/20 rounded-lg text-gaming-gold border border-gaming-gold/30">
+                 <BookOpen size={16} />
+              </div>
+              <span className="text-[10px] uppercase font-black text-gaming-gold tracking-[0.4em]">Codex da Aliança</span>
+           </div>
+           <h2 className="text-4xl md:text-6xl font-display font-black uppercase italic tracking-tighter leading-none">
+             Guia & <span className="text-gaming-gold">Dicas Estratégicas</span>
+           </h2>
+        </div>
+        <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md">
+           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+           <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Manual Atualizado v2.5</span>
+        </div>
+      </div>
+
+      {/* Main Feature: Breaking News Portal */}
+      <div 
+        onClick={() => setSelectedGuide('evoluir')}
+        className="relative group overflow-hidden rounded-[2.5rem] bg-gaming-card border border-white/10 h-[300px] md:h-[450px] cursor-pointer"
+      >
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070')] bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 opacity-50 grayscale group-hover:grayscale-0" />
+        <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent" />
+        
+        <div className="absolute top-0 right-0 p-8">
+           <div className="px-4 py-2 bg-gaming-gold text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl animate-bounce">
+              🔥 TOP DICA
+           </div>
+        </div>
+
+        <div className="absolute bottom-0 left-0 p-8 md:p-12 flex flex-col gap-4">
+           <div className="flex gap-3">
+              <span className="px-3 py-1 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full">Destaque</span>
+              <span className="px-3 py-1 bg-white/10 text-white/60 text-[8px] font-black uppercase tracking-widest rounded-full border border-white/10 backdrop-blur-md">Iniciante</span>
+           </div>
+           <h3 className="text-3xl md:text-6xl font-display font-black uppercase italic tracking-tighter leading-none max-w-2xl">
+              COMO EVOLUIR <span className="text-gaming-gold">RECORDISTA!</span>
+           </h3>
+           <p className="text-xs md:text-lg text-white/80 font-bold uppercase italic max-w-xl leading-relaxed">
+              Descubra o ciclo perfeito de missões diárias e o uso inteligente de diamantes para dominar o servidor em tempo recorde.
+           </p>
+           <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-xl font-black uppercase text-[10px] tracking-widest group-hover:bg-gaming-gold transition-colors">
+                 Abrir Guia <ChevronRight size={16} />
+              </div>
+           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Guide Item 1 */}
+        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col gap-6 hover:border-blue-500/30 transition-all cursor-pointer group hover:bg-blue-500/[0.02]">
+           <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform border border-blue-500/20">
+              <Sword size={32} />
+           </div>
+           <div>
+              <h4 className="font-display font-black uppercase text-2xl mb-2 italic">Táticas de Batalha ⚔️</h4>
+              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic">
+                Aprenda a coordenar ataques em grupo, usar curandeiros e maximizar o dano de área em guerras de clã.
+              </p>
+           </div>
+           <div className="mt-auto pt-6 border-t border-white/5 flex items-center text-blue-400 text-[10px] font-black uppercase tracking-widest gap-2">
+              Ver Dicas Militares <ChevronRight size={14} />
+           </div>
+        </div>
+
+        {/* Guide Item 2 */}
+        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col gap-6 hover:border-gaming-gold/30 transition-all cursor-pointer group hover:bg-gaming-gold/[0.02]">
+           <div className="w-16 h-16 bg-gaming-gold/10 rounded-2xl flex items-center justify-center text-gaming-gold group-hover:scale-110 transition-transform border border-gaming-gold/20">
+              <Gem size={32} />
+           </div>
+           <div>
+              <h4 className="font-display font-black uppercase text-2xl mb-2 italic">Farm de Diamantes 💎</h4>
+              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic">
+                Onde encontrar os baús mais raros e como completar eventos semanais que pagam diamantes extras.
+              </p>
+           </div>
+           <div className="mt-auto pt-6 border-t border-white/5 flex items-center text-gaming-gold text-[10px] font-black uppercase tracking-widest gap-2">
+              Dicas de Economia <ChevronRight size={14} />
+           </div>
+        </div>
+
+        {/* Guide Item 3 */}
+        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col gap-6 hover:border-green-500/30 transition-all cursor-pointer group hover:bg-green-500/[0.02]">
+           <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform border border-green-500/20">
+              <Shield size={32} />
+           </div>
+           <div>
+              <h4 className="font-display font-black uppercase text-2xl mb-2 italic">Defesa de Base 🛡️</h4>
+              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic">
+                O layout perfeito para o seu QG para evitar saques norturnos e proteger seus recursos mais valiosos.
+              </p>
+           </div>
+           <div className="mt-auto pt-6 border-t border-white/5 flex items-center text-green-400 text-[10px] font-black uppercase tracking-widest gap-2">
+              Manual de Fortificação <ChevronRight size={14} />
+           </div>
+        </div>
+
+        {/* Rules & Warnings Section */}
+        <div className="lg:col-span-3">
+           <div className="bg-linear-to-r from-red-950/20 to-transparent border border-red-500/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12">
+                 <AlertTriangle size={150} />
+              </div>
+              
+              <div className="flex-shrink-0 w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 border border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                 <ShieldCheck size={48} />
+              </div>
+              
+              <div className="flex-1 text-center md:text-left">
+                 <h4 className="font-display font-black uppercase text-2xl mb-3 text-red-500 italic flex items-center justify-center md:justify-start gap-3">
+                    Código de Honra: Caravanas 🚨
+                 </h4>
+                 <p className="text-sm md:text-base text-white/60 font-bold uppercase leading-relaxed italic mb-6">
+                    "É terminantemente PROIBIDO roubar caravanas e caixotes de jogadores do nosso próprio servidor. Isso gera retaliação severa e banimento imediato da aliança."
+                 </p>
+                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-black/40 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest">
+                       <CheckCircle2 size={14} className="text-green-500" /> Respeite Aliados
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-2 bg-black/40 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest text-red-400">
+                       <AlertTriangle size={14} /> Multa de 50 Moedas
+                    </div>
+                    <button 
+                      onClick={() => alert('Sistema de denúncias ativo!')}
+                      className="flex items-center gap-3 px-6 py-2 bg-red-500 text-black rounded-xl hover:bg-white transition-all font-black uppercase text-[9px] tracking-widest"
+                    >
+                       <MessageSquareWarning size={14} /> Denunciar Furto
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // --- COMBATE VIEW ---
 export function CombateView() {
@@ -631,6 +914,234 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
       <div className="mt-8 flex gap-4">
          <div className="px-4 py-2 bg-gaming-gold/5 border border-gaming-gold/20 rounded-lg text-[8px] font-black uppercase tracking-[0.2em] text-gaming-gold">Progresso: {progress}%</div>
          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-[0.2em] text-white/30">Stable: V0.9</div>
+      </div>
+    </div>
+  );
+}
+
+// --- GERENCIA VIEW ---
+export function GerenciaView() {
+  const { members, myMember, deleteMember, banMember, updateMemberRole } = useClan();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteMember = async (memberId: string, name: string, definitive: boolean = false) => {
+    const actionText = definitive ? 'BANIR' : 'EXPULSAR';
+    const warningText = definitive 
+      ? 'ESTA AÇÃO É DEFINITIVA. O jogador entrará na LISTA NEGRA e nunca mais poderá acessar a aliança com este ID.' 
+      : 'Esta ação removerá o perfil do jogador, mas ele poderá tentar entrar novamente.';
+
+    if (confirm(`${actionText} GUERREIRO: Deseja realmente eliminar ${name} da Ordem Suprema?\n\n${warningText}`)) {
+      setDeletingId(memberId);
+      try {
+        if (definitive) {
+          await banMember(memberId);
+          alert(`O traidor ${name} foi banido definitivamente!`);
+        } else {
+          await deleteMember(memberId);
+        }
+      } catch (err) {
+        console.error('Erro ao excluir membro:', err);
+        alert('Erro na operação. Verifique suas permissões de Líder.');
+      } finally {
+        setDeletingId(null);
+      }
+    }
+  };
+
+  const handlePromotion = async (memberId: string, currentRole: string) => {
+    if (!myMember || myMember.role !== 'leader') return;
+    
+    let newRole = 'member';
+    let actionLabel = '';
+
+    if (currentRole === 'member') {
+      newRole = 'co-leader';
+      actionLabel = 'PROMOVER A BRAÇO DIREITO';
+    } else if (currentRole === 'co-leader') {
+      newRole = 'member';
+      actionLabel = 'REBAIXAR A GUERREIRO';
+    } else {
+      return; 
+    }
+
+    if (confirm(`Deseja realmente ${actionLabel} este guerreiro?`)) {
+      try {
+        await updateMemberRole(memberId, newRole);
+      } catch (err) {
+        alert('Erro ao alterar cargo.');
+      }
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'leader': return 'Líder';
+      case 'co-leader': return 'Braço Direito';
+      case 'elder': return 'Veterano';
+      case 'member': return 'Guerreiro';
+      default: return role;
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'leader': return 'text-gaming-gold';
+      case 'co-leader': return 'text-orange-500';
+      case 'elder': return 'text-gaming-purple';
+      case 'member': return 'text-blue-400';
+      default: return 'text-white/60';
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-8 p-4 md:p-8 max-w-6xl mx-auto w-full">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+           <span className="text-[10px] uppercase font-black text-red-500 tracking-[0.4em] mb-1 block">Acesso Restrito</span>
+           <h2 className="text-4xl font-display font-black uppercase italic tracking-tighter">
+             Gestão de <span className="text-gaming-gold">Liderança</span>
+           </h2>
+        </div>
+        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl">
+           <ShieldCheck size={20} className="text-red-500" />
+           <div className="flex flex-col">
+              <span className="text-[8px] uppercase font-black text-white/30 tracking-widest">Status</span>
+              <span className="font-display font-black text-red-500 text-xs leading-none uppercase">Admin Ativo</span>
+           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 flex flex-col gap-4">
+           <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-6">
+              <div className="flex items-center justify-between">
+                 <h4 className="font-display font-black uppercase text-sm tracking-widest italic">Integrantes ({members.length})</h4>
+                 <div className="flex items-center gap-2">
+                    <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest">ID Aliança: ORDM</span>
+                 </div>
+              </div>
+              
+              <div className="flex flex-col gap-1 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+                 <AnimatePresence mode="popLayout">
+                   {members.filter(m => m.userId !== myMember?.userId).map(m => (
+                      <motion.div 
+                        key={m.id} 
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, x: -100, filter: 'blur(10px)' }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-4 flex items-center justify-between transition-all group"
+                      >
+                       <div className="flex items-center gap-4">
+                          <img 
+                            src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.userId}`} 
+                            className="w-10 h-10 rounded-full border border-white/10 object-cover" 
+                            alt={m.name}
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="flex flex-col">
+                             <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-white group-hover:text-gaming-gold transition-colors">{m.name}</span>
+                             </div>
+                             <span className={`text-[8px] font-black uppercase tracking-widest ${getRoleBadgeColor(m.role)}`}>{getRoleLabel(m.role)}</span>
+                          </div>
+                       </div>
+                       
+                         <div className="flex items-center gap-2">
+                             <div className="flex gap-1">
+                                {m.role === 'member' && (
+                                  <button 
+                                    onClick={() => handlePromotion(m.id, m.role)}
+                                    className="p-2 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/20 rounded-lg hover:bg-gaming-gold hover:text-black transition-all"
+                                    title="Subir para Braço Direito"
+                                  >
+                                     <ChevronUp size={16} />
+                                  </button>
+                                )}
+                                {m.role === 'co-leader' && (
+                                  <button 
+                                    onClick={() => handlePromotion(m.id, m.role)}
+                                    className="p-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500 hover:text-white transition-all"
+                                    title="Descer para Guerreiro"
+                                  >
+                                     <ChevronDown size={16} />
+                                  </button>
+                                )}
+                             </div>
+                             <div className="flex gap-1">
+                                <button 
+                                  disabled={deletingId === m.id}
+                                  onClick={() => handleDeleteMember(m.id, m.name, false)}
+                                  className="p-2 bg-white/5 text-white/40 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                                  title="Expulsar (Pode voltar)"
+                                >
+                                   <Trash2 size={16} />
+                                </button>
+                               <button 
+                                 disabled={deletingId === m.id}
+                                 onClick={() => handleDeleteMember(m.id, m.name, true)}
+                                 className="p-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] disabled:opacity-50"
+                                 title="BANIR (Definitivo)"
+                               >
+                                  <ShieldAlert size={16} />
+                               </button>
+                            </div>
+                         </div>
+                     </motion.div>
+                 ))}
+                 </AnimatePresence>
+                 {members.length <= 1 && (
+                   <div className="py-24 text-center flex flex-col items-center gap-4 opacity-20">
+                      <Users size={48} />
+                      <div className="text-[10px] uppercase font-black tracking-widest">
+                        Nenhum outro guerreiro na aliança para gerenciar.
+                      </div>
+                   </div>
+                 )}
+              </div>
+           </div>
+        </div>
+
+        <div className="flex flex-col gap-6">
+           <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-6">
+              <h4 className="font-display font-black uppercase text-sm tracking-widest italic border-b border-white/5 pb-4">Ações Estratégicas</h4>
+              
+              <div className="space-y-3">
+                 <button 
+                   onClick={() => {
+                     const target = prompt('Digite o nome exato do jogador:');
+                     if (target) {
+                       const member = members.find(m => m.name.toLowerCase().trim() === target.toLowerCase().trim());
+                       if (member) {
+                         setEditingId(member.id);
+                       } else {
+                         alert('Membro não encontrado.');
+                       }
+                     }
+                   }}
+                   className="w-full py-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-3 hover:bg-white hover:text-black transition-all font-display font-black uppercase text-[10px] tracking-widest"
+                 >
+                    <UserPlus size={16} /> Buscar Guerreiro
+                 </button>
+                 
+                 <button 
+                   onClick={() => setEditingId(editingId === 'all' ? null : 'all')}
+                   className={`w-full py-4 border rounded-xl flex items-center justify-center gap-3 transition-all font-display font-black uppercase text-[10px] tracking-widest ${editingId === 'all' ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'bg-white/5 border-white/10 text-white hover:bg-white/5'}`}
+                 >
+                    <Edit2 size={16} /> {editingId === 'all' ? 'Finalizar Edição' : 'Gerenciar Todos'}
+                 </button>
+              </div>
+           </div>
+
+           <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-4">
+              <h4 className="text-[10px] font-black uppercase text-white/20 tracking-widest">Aviso Importante</h4>
+              <p className="text-[10px] text-white/50 leading-relaxed font-bold uppercase italic">
+                Ao expulsar um integrante, seu acesso à Supremacia será revogado imediatamente. Transferir a liderança é uma ação irreversível.
+              </p>
+           </div>
+        </div>
       </div>
     </div>
   );

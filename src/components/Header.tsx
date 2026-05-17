@@ -14,10 +14,14 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
   React.useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setHours(24, 0, 0, 0);
+      // Brasilia is UTC-3
+      const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const brTime = new Date(utcNow + (3600000 * -3));
       
-      const diff = tomorrow.getTime() - now.getTime();
+      const nextMidnightBr = new Date(brTime);
+      nextMidnightBr.setHours(24, 0, 0, 0);
+      
+      const diff = nextMidnightBr.getTime() - brTime.getTime();
       
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));

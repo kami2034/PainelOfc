@@ -9,8 +9,10 @@ import { NicknameSelector } from './components/NicknameSelector';
 import { useClan } from './context/ClanContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDevice } from './hooks/useDevice';
-import { Monitor, Smartphone, RefreshCw, Loader2 } from 'lucide-react';
+import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert } from 'lucide-react';
 import { LevelUpModal } from './components/LevelUpModal';
+import { db } from './lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 import { 
   CombateView, 
@@ -19,15 +21,18 @@ import {
   PerfilView, 
   ConfiguracoesView, 
   DevelopmentView,
-  RewardsView
+  RewardsView,
+  GerenciaView,
+  GuiaView
 } from './components/Views';
 import { MissoesView } from './components/MissoesView';
 
 export default function App() {
   const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData } = useClan();
+  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout } = useClan();
   const [activeTab, setActiveTab ] = useState('inicio');
   const [initializing, setInitializing] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
   
   const [showLevelUp, setShowLevelUp] = useState(false);
 
@@ -120,6 +125,10 @@ export default function App() {
         return <MissoesView />;
       case 'recompensas':
         return <RewardsView />;
+      case 'guia':
+        return <GuiaView />;
+      case 'gerencia':
+        return <GerenciaView />;
       case 'batalha':
       case 'historico':
       case 'territorios':
@@ -135,10 +144,90 @@ export default function App() {
     }
   };
 
+  const [wasMember, setWasMember] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (isMember) {
+        setWasMember(true);
+      } else if (wasMember === true) {
+        // Was a member, but now is not. Likely expelled or left.
+        logout();
+      }
+    }
+  }, [isMember, wasMember, user, loading, logout]);
+
+  useEffect(() => {
+    if (user) {
+      getDoc(doc(db, 'bans', user.uid)).then(snap => {
+        if (snap.exists()) setIsBanned(true);
+      }).catch(() => {});
+
+      // Presence management
+      const updateStatus = async (status: 'online' | 'away' | 'offline') => {
+        try {
+          const memberRef = doc(db, 'clans', 'main-clan', 'members', user.uid);
+          const { updateDoc } = await import('firebase/firestore');
+          await updateDoc(memberRef, { status });
+        } catch (err) {
+          // Fail silently
+        }
+      };
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          updateStatus('online');
+        } else {
+          updateStatus('away');
+        }
+      };
+
+      // Set online on load
+      updateStatus('online');
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Set offline on close
+      const handleUnload = () => {
+        // Use synchronous update or navigator.sendBeacon pattern if possible, 
+        // but for Firestore we just attempt a fire-and-forget.
+        updateStatus('offline');
+      };
+
+      window.addEventListener('beforeunload', handleUnload);
+
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('beforeunload', handleUnload);
+        updateStatus('offline');
+      };
+    }
+  }, [user]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gaming-bg flex items-center justify-center">
         <Loader2 className="text-gaming-gold animate-spin" size={48} />
+      </div>
+    );
+  }
+
+  if (isBanned) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+         <div className="w-24 h-24 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(239,68,68,0.2)]">
+            <ShieldAlert className="text-red-500" size={48} />
+         </div>
+         <h1 className="text-4xl font-display font-black uppercase mb-4 italic text-red-500">Acesso <span className="text-white">Negado</span></h1>
+         <p className="text-white/40 max-w-sm uppercase text-[10px] tracking-[0.2em] font-bold mb-12 leading-relaxed">
+           Você foi banido permanentemente da Aliança Suprema Ordem por quebra de conduta ou decisão da liderança. 
+         </p>
+         <button 
+          onClick={() => logout()}
+          className="px-12 py-4 bg-white text-black rounded-xl font-display font-black uppercase tracking-widest hover:bg-red-500 transition-all"
+         >
+           Sair do Sistema
+         </button>
       </div>
     );
   }

@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import React, { useRef } from 'react';
-import { Shield, ChevronRight, MapPin, Search, Users, LogOut, Camera, Circle, Skull } from 'lucide-react';
+import { Shield, ChevronRight, MapPin, Search, Users, LogOut, Camera, Circle, Skull, BookOpen } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 import { updateMemberAvatar } from '../services/clanService';
 import { auth } from '../lib/firebase';
@@ -94,11 +94,21 @@ export function ClanProfile({
   const trophyProgress = ((myMember?.trophies || 0) / 100) * 100;
 
   const tabs = [
-    { id: 'conquistas', label: 'Conquistas (Em Breve)' }
+    { id: 'guia', label: 'Guia e Dicas 📚' }
   ];
 
   return (
     <section className="relative w-full rounded-2xl overflow-hidden bg-gaming-card border border-gaming-border mb-4 md:mb-6 transition-all duration-500">
+      {/* Quick Guide Callout (Mobile) */}
+      {isMobile && (
+        <div 
+          onClick={() => setActiveTab('guia')}
+          className="bg-gaming-gold text-black p-3 flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest animate-pulse cursor-pointer relative z-20"
+        >
+          <BookOpen size={14} /> Guia de Sobrevivência: Comece Aqui! 📚
+        </div>
+      )}
+      
       {/* Background Image/Art */}
       <div className="absolute inset-0 opacity-20 md:opacity-40 mix-blend-overlay">
         <img 
@@ -207,6 +217,16 @@ export function ClanProfile({
                       <span className="text-[10px] font-black uppercase text-green-500 italic tracking-tighter">Ativo</span>
                    </div>
                    <Circle size={24} className="absolute -right-2 -bottom-2 text-green-500/10 fill-current group-hover:scale-110 transition-transform" />
+                </div>
+                <div 
+                  onClick={() => setActiveTab('guia')}
+                  className="col-span-2 bg-gaming-gold text-black rounded-xl p-3 flex items-center justify-between group overflow-hidden relative shadow-lg cursor-pointer hover:bg-white transition-all"
+                >
+                   <div className="relative z-10">
+                      <span className="text-[7px] uppercase font-black text-black/60 tracking-widest block">Manual de Guerra</span>
+                      <span className="text-xs font-black uppercase italic tracking-tighter">Guia & Dicas 📚</span>
+                   </div>
+                   <BookOpen size={32} className="text-black/10 absolute -right-1 -bottom-1 rotate-12 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="col-span-2 bg-linear-to-r from-gaming-gold/10 to-transparent border border-gaming-gold/20 rounded-xl p-3 flex items-center justify-between group overflow-hidden relative shadow-lg">
                    <div className="relative z-10">

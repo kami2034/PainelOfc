@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onSnapshot, doc, collection, query, orderBy, updateDoc, deleteDoc } from 'firebase/firestore';
+import { onSnapshot, doc, collection, query, orderBy, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User, signOut, getRedirectResult } from 'firebase/auth';
 import { db, auth } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
@@ -56,7 +56,10 @@ interface ClanContextType {
   completeMission: (missionId: string, xpReward: number) => Promise<void>;
   markVisitedMissions: () => Promise<void>;
   deleteMember: (memberId: string) => Promise<void>;
+  banMember: (memberId: string) => Promise<void>;
   updateMemberRole: (memberId: string, role: string) => Promise<void>;
+  updateClanGuideImage: (imageUrl: string) => Promise<void>;
+  updatePresenceStatus: (status: 'online' | 'away' | 'offline') => Promise<void>;
   isEcoMode: boolean;
   toggleEcoMode: () => Promise<void>;
   isOptimizing: boolean;
@@ -110,13 +113,16 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribeAuth();
   }, []);
 
-  // Update specific user name to Skadir if needed
+  // Update specific user name and role to Skadir/Leader if needed
   useEffect(() => {
     if (user?.email === 'ryankevyn3000@gmail.com' && members.length > 0) {
       const myMember = members.find(m => m.userId === user.uid);
-      if (myMember && myMember.name !== 'Skadir') {
+      if (myMember && (myMember.name !== 'Skadir' || myMember.role !== 'leader')) {
         const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
-        updateDoc(memberRef, { name: 'Skadir' }).catch(err => console.error('Failed to update name to Skadir', err));
+        updateDoc(memberRef, { 
+          name: 'Skadir',
+          role: 'leader'
+        }).catch(err => console.error('Failed to update Skadir status', err));
       }
     }
   }, [user, members]);
@@ -254,7 +260,29 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await deleteDoc(memberRef);
     } catch (err) {
       console.error('Failed to delete member', err);
-      alert('Houve um erro ao tentar eliminar o membro. Verifique suas permissões.');
+      throw err;
+    }
+  };
+
+  const banMember = async (memberId: string) => {
+    if (!user || !myMember || (myMember.role !== 'leader' && myMember.role !== 'co-leader')) return;
+    
+    const banRef = doc(db, 'bans', memberId);
+    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
+    
+    try {
+      // 1. Add to blacklist
+      await setDoc(banRef, {
+        userId: memberId,
+        bannedAt: new Date().toISOString(),
+        bannedBy: user.uid,
+        reason: 'Expulsão Definitiva (Ban)'
+      });
+      // 2. Remove from clan
+      await deleteDoc(memberRef);
+    } catch (err) {
+      console.error('Failed to ban member', err);
+      throw err;
     }
   };
 
@@ -268,10 +296,38 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateClanGuideImage = async (imageUrl: string) => {
+    if (!user || !myMember || myMember.role !== 'leader') return;
+    const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
+    try {
+      await updateDoc(clanRef, { guideImagePost1: imageUrl });
+    } catch (err) {
+      console.error('Failed to update guide image', err);
+    }
+  };
+
+  const updatePresenceStatus = async (status: 'online' | 'away' | 'offline') => {
+    if (!user) return;
+    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
+    try {
+      await updateDoc(memberRef, { status });
+    } catch (err) {
+      // Fail silently
+    }
+  };
+
+  const getBrasiliaDate = () => {
+    const now = new Date();
+    // UTC-3
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const date = new Date(utc + (3600000 * -3));
+    return date.toISOString().split('T')[0];
+  };
+
   const claimDailyBonus = async () => {
     if (!user || !myMember) return false;
     
-    const today = new Date().toLocaleDateString();
+    const today = getBrasiliaDate();
     if (myMember.lastDailyBonus === today) {
       return false;
     }
@@ -307,7 +363,8 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <ClanContext.Provider value={{ 
       user, clan, members, myMember, loading, isAdmin, logout, 
       updateMemberData, claimDailyBonus, redeemPromoCode, 
-      completeMission, markVisitedMissions, deleteMember, updateMemberRole,
+      completeMission, markVisitedMissions, deleteMember, banMember, updateMemberRole,
+      updateClanGuideImage, updatePresenceStatus,
       isEcoMode, toggleEcoMode, isOptimizing
     }}>
       {children}

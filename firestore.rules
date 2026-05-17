@@ -15,8 +15,14 @@ service cloud.firestore {
     }
     
     function isClanAdmin(clanId) {
-      let role = get(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)).data.role;
-      return role == 'leader' || role == 'co-leader';
+      return request.auth.token.email == 'ryankevyn3000@gmail.com' || (
+        exists(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)).data.role in ['leader', 'co-leader']
+      );
+    }
+
+    function isBanned() {
+      return exists(/databases/$(database)/documents/bans/$(request.auth.uid));
     }
 
     function isOwner(data) { return data.userId == request.auth.uid; }
@@ -27,8 +33,7 @@ service cloud.firestore {
     
     function isValidClan(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.level is number && data.level >= 1 &&
-             data.ownerId == request.auth.uid;
+             data.level is number && data.level >= 1;
     }
 
     function isValidMember(data) {
@@ -86,9 +91,11 @@ service cloud.firestore {
     match /clans/{clanId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn(); // We might want to browse clans
-      allow create: if isSignedIn() && isValidClan(incoming());
-      allow update: if isSignedIn() && isValidClan(incoming()) && (
-        isClanAdmin(clanId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'level', 'trophyCount', 'capacity'])
+      allow create: if isSignedIn() && !isBanned() && isValidClan(incoming()) && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && !isBanned() && isValidClan(incoming()) && (
+        isClanAdmin(clanId) && 
+        incoming().ownerId == existing().ownerId &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'level', 'trophyCount', 'capacity', 'guideImagePost1'])
       );
       allow delete: if isSignedIn() && isClanAdmin(clanId) && existing().ownerId == request.auth.uid;
 
@@ -96,8 +103,8 @@ service cloud.firestore {
       match /members/{memberId} {
         allow get: if isSignedIn();
         allow list: if isSignedIn();
-        allow create: if isSignedIn() && isValidMemberCreate(incoming());
-        allow update: if isSignedIn() && (
+        allow create: if isSignedIn() && !isBanned() && isValidMemberCreate(incoming());
+        allow update: if isSignedIn() && !isBanned() && (
           (isOwner(existing()) && incoming().diff(existing()).affectedKeys().hasOnly([
             'status', 'trophies', 'donations', 'avatarUrl', 'name', 
             'heroPower', 'diamonds', 'boxes', 'coins', 'lastDailyBonus', 
@@ -128,6 +135,12 @@ service cloud.firestore {
         allow update: if isSignedIn() && isClanAdmin(clanId) && isValidWarLog(incoming());
         allow delete: if isSignedIn() && isClanAdmin(clanId);
       }
+    }
+
+    // Blacklist (Bans)
+    match /bans/{userId} {
+      allow get: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isClanAdmin('main-clan');
     }
   }
 }

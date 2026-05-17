@@ -16,19 +16,12 @@ import {
   Swords,
   History,
   Globe,
-  Gift
+  Gift,
+  ShieldCheck,
+  BookOpen
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useClan } from '../context/ClanContext';
-
-const icons = [
-  { icon: Home, id: 'inicio', label: 'Início' },
-  { icon: Skull, id: 'combate', label: 'Combate' },
-  { icon: ClipboardList, id: 'missoes', label: 'Missões', notify: true },
-  { icon: Gift, id: 'recompensas', label: 'Recompensas' },
-  { icon: User, id: 'perfil', label: 'Perfil' },
-  { icon: Settings, id: 'configuracoes', label: 'Configurações' },
-];
 
 export function Sidebar({ 
   isMobile = false, 
@@ -41,8 +34,24 @@ export function Sidebar({
 }) {
   const { myMember, completeMission, isEcoMode } = useClan();
 
+  const baseIcons = [
+    { icon: Home, id: 'inicio', label: 'Início' },
+    { icon: Skull, id: 'combate', label: 'Combate' },
+    { icon: ClipboardList, id: 'missoes', label: 'Missões', notify: true },
+    { icon: BookOpen, id: 'guia', label: 'Guia e Dicas' },
+    { icon: Gift, id: 'recompensas', label: 'Recompensas' },
+    { icon: User, id: 'perfil', label: 'Perfil' },
+    { icon: Settings, id: 'configuracoes', label: 'Configurações' },
+  ];
+
+  const adminIcons = myMember?.role === 'leader' ? [
+    { icon: ShieldCheck, id: 'gerencia', label: 'Gerência' }
+  ] : [];
+
+  const icons = [...baseIcons, ...adminIcons];
+
   const displayedIcons = isMobile 
-    ? icons.filter(i => ['inicio', 'combate', 'missoes', 'recompensas', 'perfil', 'configuracoes'].includes(i.id)) 
+    ? icons.filter(i => ['inicio', 'combate', 'missoes', 'guia', 'recompensas', 'perfil', 'configuracoes', 'gerencia'].includes(i.id)) 
     : icons;
 
   const handleTabClick = (id: string) => {
