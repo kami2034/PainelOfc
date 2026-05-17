@@ -1,0 +1,6 @@
+{
+  "name": "Aliança Suprema Dashboard",
+  "description": "Dashboard de gerenciamento para a Aliança Suprema com foco em estratégia e coordenação de elite.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

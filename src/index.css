@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-gaming-purple: #7c3aed;
+  --color-gaming-gold: #fbbf24;
+  --color-gaming-bg: #0d0118;
+  --color-gaming-card: #1a0b2e;
+  --color-gaming-border: rgba(251, 191, 36, 0.1);
+}
+
+[data-theme="neon"] {
+  --color-gaming-purple: #00f2ff;
+  --color-gaming-gold: #ff00ea;
+  --color-gaming-bg: #050110;
+  --color-gaming-card: #0d041a;
+}
+
+[data-theme="gold"] {
+  --color-gaming-purple: #fbbf24;
+  --color-gaming-gold: #ffffff;
+  --color-gaming-bg: #1a1400;
+  --color-gaming-card: #2d2100;
+}
+
+[data-theme="classic"] {
+  --color-gaming-purple: #3b82f6;
+  --color-gaming-gold: #ef4444;
+  --color-gaming-bg: #0f172a;
+  --color-gaming-card: #1e293b;
+}
+
+@layer base {
+  body {
+    @apply bg-gaming-bg text-white font-sans antialiased selection:bg-gaming-purple/30;
+  }
+}
+
+:root {
+  --ui-opacity: 0.8;
+}
+
+/* Opacity Effects */
+.bg-gaming-card, .bg-gaming-card\/40, .bg-gaming-card\/30 {
+  background-color: rgba(26, 11, 46, var(--ui-opacity)) !important;
+  backdrop-filter: blur(12px);
+}
+
+.eco-mode .bg-gaming-card, 
+.eco-mode .bg-gaming-card\/40, 
+.eco-mode .bg-gaming-card\/30,
+.eco-mode .backdrop-blur-md,
+.eco-mode .backdrop-blur-xl,
+.eco-mode .backdrop-blur-2xl,
+.eco-mode .backdrop-blur-sm {
+  backdrop-filter: none !important;
+  background-opacity: 1 !important;
+}
+
+.eco-mode * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.1s !important;
+}
+
+.eco-mode .gaming-gradient {
+  background: var(--color-gaming-bg) !important;
+}
+
+[data-theme="neon"] .bg-gaming-card, [data-theme="neon"] .bg-gaming-card\/40 {
+  background-color: rgba(13, 4, 26, var(--ui-opacity)) !important;
+}
+
+[data-theme="gold"] .bg-gaming-card, [data-theme="gold"] .bg-gaming-card\/40 {
+  background-color: rgba(45, 33, 0, var(--ui-opacity)) !important;
+}
+
+[data-theme="classic"] .bg-gaming-card, [data-theme="classic"] .bg-gaming-card\/40 {
+  background-color: rgba(30, 41, 59, var(--ui-opacity)) !important;
+}
+
+.text-shadow-glow {
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.gaming-gradient {
+  background: radial-gradient(circle at 70% 30%, rgba(124, 58, 237, 0.15) 0%, transparent 60%),
+              radial-gradient(circle at 10% 80%, rgba(251, 191, 36, 0.1) 0%, transparent 50%);
+}
+
+.hex-clip {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}

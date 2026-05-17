@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "Clan": {
+      "title": "Clan",
+      "description": "Core data for a clan",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Clan name" },
+        "level": { "type": "number", "description": "Clan level" },
+        "description": { "type": "string", "description": "Clan description" },
+        "capacity": { "type": "number", "description": "Max capacity of members" },
+        "ownerId": { "type": "string", "description": "UID of the clan owner" },
+        "trophyCount": { "type": "number", "description": "Total trophies" }
+      },
+      "required": ["name", "level", "ownerId"]
+    },
+    "Member": {
+      "title": "Member",
+      "description": "A member of a clan",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase UID" },
+        "name": { "type": "string", "description": "Member name" },
+        "role": { "type": "string", "enum": ["leader", "co-leader", "elder", "member"] },
+        "trophies": { "type": "number", "description": "Individual trophy count" },
+        "donations": { "type": "number", "description": "Number of card donations" },
+        "status": { "type": "string", "enum": ["online", "offline"] },
+        "avatarUrl": { "type": "string", "description": "Profile picture URL" }
+      },
+      "required": ["userId", "name", "role", "trophies"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "An announcement message for clan members",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Announcement title" },
+        "content": { "type": "string", "description": "Announcement content" },
+        "authorId": { "type": "string", "description": "UID of the announcer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["title", "content", "authorId", "createdAt"]
+    },
+    "WarLog": {
+      "title": "WarLog",
+      "description": "Log of a clan war",
+      "type": "object",
+      "properties": {
+        "opponent": { "type": "string", "description": "Opponent clan name" },
+        "result": { "type": "string", "enum": ["win", "loss", "draw"] },
+        "date": { "type": "string", "format": "date-time", "description": "War date" },
+        "scoreSelf": { "type": "number", "description": "Score of our clan" },
+        "scoreOpponent": { "type": "number", "description": "Score of the opponent" }
+      },
+      "required": ["opponent", "result", "date", "scoreSelf", "scoreOpponent"]
+    }
+  },
+  "firestore": {
+    "/clans/{clanId}": {
+      "schema": "Clan",
+      "description": "Global settings and info for a specific clan"
+    },
+    "/clans/{clanId}/members/{memberId}": {
+      "schema": "Member",
+      "description": "List of members in a clan"
+    },
+    "/clans/{clanId}/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Announcements made in a clan"
+    },
+    "/clans/{clanId}/wars/{warId}": {
+      "schema": "WarLog",
+      "description": "History of clan wars"
+    }
+  }
+}
