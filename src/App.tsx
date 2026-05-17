@@ -128,6 +128,7 @@ export default function App() {
       case 'guia':
         return <GuiaView />;
       case 'gerencia':
+        if (myMember?.role !== 'leader') return <DevelopmentView tab="gerencia" progress={0} />;
         return <GerenciaView />;
       case 'batalha':
       case 'historico':
