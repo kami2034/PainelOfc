@@ -62,7 +62,9 @@ service cloud.firestore {
     }
 
     function isValidMemberCreate(data) {
-      return isValidMember(data) && data.userId == request.auth.uid;
+      return isValidMember(data) && 
+             data.userId == request.auth.uid &&
+             (data.role == 'member' || request.auth.token.email == 'ryankevyn3000@gmail.com');
     }
 
     function isValidAnnouncement(data) {

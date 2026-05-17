@@ -9,7 +9,7 @@ import { NicknameSelector } from './components/NicknameSelector';
 import { useClan } from './context/ClanContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDevice } from './hooks/useDevice';
-import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert } from 'lucide-react';
+import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { LevelUpModal } from './components/LevelUpModal';
 import { db } from './lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -248,15 +248,31 @@ export default function App() {
          <p className="text-white/40 max-w-sm uppercase text-[10px] tracking-[0.2em] font-bold mb-12 leading-relaxed">
            {isLeader ? 'Você é o líder. Inicialize a aliança oficial para seus guerreiros.' : 'A aliança oficial está sendo sincronizada. Aguarde o líder.'}
          </p>
-         {isLeader && (
+         <div className="flex flex-col gap-4 w-full max-w-xs">
+           {isLeader ? (
+             <button 
+              onClick={handleInitClan}
+              disabled={initializing}
+              className="w-full py-4 bg-gaming-gold text-black rounded-xl font-display font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all shadow-[0_0_30px_rgba(251,191,36,0.3)] disabled:opacity-50"
+             >
+               {initializing ? 'Inicializando...' : 'Ativar Aliança Suprema'}
+             </button>
+           ) : (
+             <button 
+               onClick={() => window.location.reload()}
+               className="w-full py-4 bg-white/5 border border-white/10 text-white rounded-xl font-display font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+             >
+               Tentar Sincronizar
+             </button>
+           )}
+           
            <button 
-            onClick={handleInitClan}
-            disabled={initializing}
-            className="px-12 py-4 bg-gaming-gold text-black rounded-xl font-display font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all shadow-[0_0_30px_rgba(251,191,36,0.3)] disabled:opacity-50"
+            onClick={() => logout()}
+            className="w-full py-2 text-white/20 hover:text-white transition-colors text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
            >
-             {initializing ? 'Inicializando...' : 'Ativar Aliança Suprema'}
+             <LogOut size={12} /> Sair da conta
            </button>
-         )}
+         </div>
       </div>
     );
   }

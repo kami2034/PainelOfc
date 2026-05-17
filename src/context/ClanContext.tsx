@@ -166,7 +166,13 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setClan(null);
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `clans/${DEFAULT_CLAN_ID}`);
+      console.error('Clan Snapshot Error:', error);
+      try {
+        handleFirestoreError(error, OperationType.GET, `clans/${DEFAULT_CLAN_ID}`);
+      } catch (e) {
+        // Log is already done
+      }
+      setLoading(false);
     });
 
     // 2. Listen to Members
@@ -181,8 +187,14 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setMembers(membersData);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, `clans/${DEFAULT_CLAN_ID}/members`);
+      console.error('Members Snapshot Error:', error);
       setLoading(false);
+      // Don't throw here to avoid crashing the whole context
+      try {
+        handleFirestoreError(error, OperationType.LIST, `clans/${DEFAULT_CLAN_ID}/members`);
+      } catch (e) {
+        // Log is already done in handleFirestoreError
+      }
     });
 
     return () => {

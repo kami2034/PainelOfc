@@ -9,18 +9,32 @@ export function Login() {
 
   const handleLogin = async () => {
     setLoading(true);
+    setError('');
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, provider).catch(async (popupError) => {
+        // Fallback for some environments: try redirect
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+          throw popupError; // handle in outer catch
+        }
+        console.warn('Popup failed, trying redirect...', popupError);
+        const { signInWithRedirect } = await import('firebase/auth');
+        return signInWithRedirect(auth, provider);
+      });
     } catch (error: any) {
       console.error('Login failed', error);
-      // If popup is blocked or fails, we might want to tell the user
       if (error.code === 'auth/popup-blocked') {
-        alert('O popup de login foi bloqueado pelo seu navegador. Por favor, permita popups para este site.');
+        setError('O popup foi bloqueado. Clique novamente ou permita popups.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setError('Login cancelado pelo usuário.');
+      } else {
+        setError('Erro ao entrar: ' + (error.message || 'Erro desconhecido'));
       }
       setLoading(false);
     }
   };
+
+  const [error, setError] = useState('');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gaming-bg text-white p-6">
@@ -41,6 +55,12 @@ export function Login() {
         <p className="text-white/40 uppercase text-[10px] tracking-[0.2em] font-bold mb-12">
           Acesse para gerenciar sua aliança e acompanhar as guerras em tempo real.
         </p>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+            {error}
+          </div>
+        )}
 
         <button 
           onClick={handleLogin}

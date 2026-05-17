@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Check, ArrowRight, ShieldCheck } from 'lucide-react';
+import { User, Check, ArrowRight, ShieldCheck, LogOut } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
 
 interface NicknameSelectorProps {
   onSelect: (nickname: string) => void;
@@ -22,6 +24,10 @@ export function NicknameSelector({ onSelect, loading }: NicknameSelectorProps) {
       return;
     }
     onSelect(nickname);
+  };
+
+  const handleLogout = () => {
+    signOut(auth);
   };
 
   return (
@@ -86,6 +92,14 @@ export function NicknameSelector({ onSelect, loading }: NicknameSelectorProps) {
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </>
             )}
+          </button>
+          
+          <button 
+            type="button"
+            onClick={handleLogout}
+            className="w-full mt-2 py-2 text-white/40 hover:text-white transition-colors text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+          >
+             <LogOut size={12} /> Sair desta conta
           </button>
         </form>
 
