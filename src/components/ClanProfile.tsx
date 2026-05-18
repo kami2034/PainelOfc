@@ -14,7 +14,7 @@ export function ClanProfile({
   activeTab?: string;
   setActiveTab: (tab: string) => void;
 }) {
-  const { clan, members, user, loading, isEcoMode } = useClan();
+  const { clan, members, user, loading, isEcoMode, setActiveSubTab } = useClan();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const myMember = members.find(m => m.userId === user?.uid);
@@ -108,8 +108,11 @@ export function ClanProfile({
     <section className="relative w-full rounded-2xl overflow-hidden bg-gaming-card border border-gaming-border mb-4 md:mb-6 transition-all duration-500">
       {/* New Feature Notification */}
       <div 
-        onClick={() => setActiveTab('guia')}
-        className="bg-linear-to-r from-gaming-gold/20 via-gaming-gold/5 to-transparent border-b border-gaming-gold/20 px-4 md:px-8 py-2.5 flex items-center justify-between group cursor-pointer hover:bg-gaming-gold/30 transition-all font-display"
+        onClick={() => {
+          setActiveTab('guia');
+          setActiveSubTab('avisos');
+        }}
+        className="relative z-10 bg-linear-to-r from-gaming-gold/20 via-gaming-gold/5 to-transparent border-b border-gaming-gold/20 px-4 md:px-8 py-2.5 flex items-center justify-between group cursor-pointer hover:bg-gaming-gold/30 transition-all font-display"
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gaming-gold flex items-center justify-center text-black shadow-[0_0_15px_rgba(251,191,36,0.5)] animate-bounce">

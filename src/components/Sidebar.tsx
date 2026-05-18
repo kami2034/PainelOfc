@@ -32,7 +32,9 @@ export function Sidebar({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) {
-  const { myMember, completeMission, isEcoMode } = useClan();
+  const { myMember, completeMission, isEcoMode, clan, user } = useClan();
+
+  const isLeader = myMember?.role === 'leader' || user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com';
 
   const baseIcons = [
     { icon: Home, id: 'inicio', label: 'Início' },
@@ -44,7 +46,7 @@ export function Sidebar({
     { icon: Settings, id: 'configuracoes', label: 'Configurações' },
   ];
 
-  const adminIcons = myMember?.role === 'leader' ? [
+  const adminIcons = isLeader ? [
     { icon: ShieldCheck, id: 'gerencia', label: 'Gerência' }
   ] : [];
 
@@ -71,8 +73,22 @@ export function Sidebar({
         : 'fixed left-0 top-0 w-16 h-full border-r flex-col py-6 gap-6'}
     `}>
       {!isMobile && (
-        <div className="mb-4">
-          <span className="text-xl font-display font-bold text-gaming-gold">ORDM</span>
+        <div className="mb-4 w-10 h-10 mx-auto flex items-center justify-center">
+          {clan?.logoUrl || clan?.guideImagePost1 ? (
+            ((clan.logoUrl && clan.logoUrl.length < 8) || (clan.guideImagePost1 && clan.guideImagePost1.length < 8)) ? (
+              <span className={`text-2xl ${isEcoMode ? '' : 'drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]'} select-none`}>
+                {clan.logoUrl || clan.guideImagePost1}
+              </span>
+            ) : (
+              <img 
+                src={clan?.logoUrl || clan?.guideImagePost1} 
+                alt="Logo" 
+                className={`w-full h-full object-contain ${isEcoMode ? '' : 'drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]'}`} 
+              />
+            )
+          ) : (
+            <span className={`text-2xl ${isEcoMode ? '' : 'drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]'} select-none`}>🐺</span>
+          )}
         </div>
       )}
       

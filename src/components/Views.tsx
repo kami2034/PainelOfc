@@ -44,15 +44,48 @@ import {
 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 
+// --- SHARED UTILS ---
+const compressImage = (base64: string, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+  });
+};
+
 // --- GUIA VIEW ---
 export function GuiaView() {
-  const { isEcoMode, myMember, clan, updateClanGuideImage, reportTheft } = useClan();
+  const { isEcoMode, myMember, clan, updateClanGuideImage, reportTheft, user, activeSubTab, setActiveSubTab } = useClan();
   const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
   const [showTheftReported, setShowTheftReported] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'guias' | 'avisos'>('guias');
 
-  const isLeader = myMember?.role === 'leader';
-  const displayImage = clan?.guideImagePost1 || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
+  const isLeader = myMember?.role === 'leader' || user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com';
+  // Heuristic: If guideImagePost1 is a data URL, it's likely the logo used as fallback. Use default guide image instead.
+  const displayImage = (clan?.guideImagePost1 && !clan?.guideImagePost1.startsWith('data:image')) 
+    ? clan.guideImagePost1 
+    : 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isLeader) return;
@@ -60,9 +93,14 @@ export function GuiaView() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       if (event.target?.result) {
-        updateClanGuideImage(event.target.result as string);
+        try {
+          const compressed = await compressImage(event.target.result as string, 800, 800, 0.5);
+          updateClanGuideImage(compressed);
+        } catch (err) {
+          console.error('Error compressing guide image:', err);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -197,8 +235,8 @@ export function GuiaView() {
              Guia & <span className="text-gaming-gold">Dicas Estratégicas</span>
            </h2>
         </div>
-        <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md">
-           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+        <div className={`flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-3 rounded-2xl ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
+           <div className={`w-2 h-2 rounded-full bg-green-500 ${isEcoMode ? '' : 'animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]'}`} />
            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Manual Atualizado v2.5</span>
         </div>
       </div>
@@ -222,9 +260,9 @@ export function GuiaView() {
 
       {activeSubTab === 'avisos' ? (
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={isEcoMode ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#0a0a0a] border-2 border-red-600/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-[0_0_50px_rgba(220,38,38,0.1)]"
+          className="bg-[#0a0a0a] border-2 border-red-600/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-2xl"
         >
           {/* Background pattern */}
           <div className="absolute inset-0 opacity-5 pointer-events-none">
@@ -324,8 +362,8 @@ export function GuiaView() {
               </div>
            </div>
            
-           <div className="w-20 h-20 bg-linear-to-br from-blue-600/30 to-blue-900/10 rounded-[2rem] flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all border border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden">
-              <div className="absolute inset-0 bg-linear-to-t from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+         <div className={`w-20 h-20 bg-linear-to-br from-blue-600/30 to-blue-900/10 rounded-[2rem] flex items-center justify-center text-blue-400 ${isEcoMode ? '' : 'group-hover:scale-110 group-hover:rotate-6 shadow-[0_0_40px_rgba(59,130,246,0.15)]'} transition-all border border-blue-500/30 relative overflow-hidden`}>
+              {!isEcoMode && <div className="absolute inset-0 bg-linear-to-t from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />}
               <Sword size={40} className="relative z-10" />
            </div>
            
@@ -371,8 +409,8 @@ export function GuiaView() {
               </div>
            </div>
 
-           <div className="w-20 h-20 bg-linear-to-br from-gaming-gold/30 to-gaming-gold/10 rounded-[2rem] flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:-rotate-6 transition-all border border-gaming-gold/30 shadow-[0_0_40px_rgba(251,191,36,0.15)] relative overflow-hidden">
-              <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+         <div className={`w-20 h-20 bg-linear-to-br from-gaming-gold/30 to-gaming-gold/10 rounded-[2rem] flex items-center justify-center text-gaming-gold ${isEcoMode ? '' : 'group-hover:scale-110 group-hover:-rotate-6 shadow-[0_0_40px_rgba(251,191,36,0.15)]'} transition-all border border-gaming-gold/30 relative overflow-hidden`}>
+              {!isEcoMode && <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />}
               <Gem size={40} className="relative z-10" />
            </div>
 
@@ -801,7 +839,7 @@ export function PerfilView() {
 
 // --- CONFIGURACOES VIEW ---
 export function ConfiguracoesView() {
-  const { logout, myMember, updateMemberData, isEcoMode, toggleEcoMode, isOptimizing } = useClan();
+  const { logout, myMember, updateMemberData, isEcoMode, toggleEcoMode, isOptimizing, deleteMember } = useClan();
 
   const handleThemeChange = (theme: 'dark' | 'neon' | 'gold' | 'classic') => {
     updateMemberData({ appTheme: theme });
@@ -811,9 +849,17 @@ export function ConfiguracoesView() {
     updateMemberData({ opacityLevel: Number(e.target.value) });
   };
 
-  const handleDeleteAccount = () => {
-    if (confirm("TEM CERTEZA? Esta ação é irreversível e você perderá todo o seu progresso na Aliança Suprema.")) {
-       alert("Funcionalidade em desenvolvimento seguro. Contate um administrador para remoção manual de dados por enquanto.");
+  const handleDeleteAccount = async () => {
+    if (!myMember) return;
+    
+    if (confirm("TEM CERTEZA? Esta ação é irreversível e você perderá todo o seu progresso na Aliança Suprema. Suas medalhas, diamonds e status serão apagados.")) {
+       try {
+         await deleteMember(myMember.userId);
+         // Deletion handles logout in the context
+       } catch (err) {
+         console.error('Erro ao deletar conta:', err);
+         alert("Ocorreu um erro ao tentar deletar sua conta. Tente novamente mais tarde.");
+       }
     }
   };
 
@@ -1021,7 +1067,7 @@ export function RewardsView() {
       id: 'gift_card_50', 
       title: 'Gift Card R$ 50', 
       desc: 'Cartão presente de R$ 50 para usar como quiser.', 
-      price: 1000, 
+      price: 200, 
       icon: CreditCard,
       rarity: 'Místico'
     },
@@ -1164,9 +1210,48 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
 
 // --- GERENCIA VIEW ---
 export function GerenciaView() {
-  const { members, myMember, deleteMember, banMember, updateMemberRole, theftReports, clearTheftReport, isEcoMode } = useClan();
+  const { members, myMember, deleteMember, banMember, updateMemberRole, theftReports, clearTheftReport, isEcoMode, updateClanLogo, clan } = useClan();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const clanEmojis = ['🐺', '🦁', '🦅', '🎯', '⚔️', '🛡️', '👑', '🔥', '💎', '🐲', '⚡', '🌌', '💀', '⛩️', '⚔️', '🔱'];
+
+  const handleEmojiSelect = async (emoji: string) => {
+    setLogoUploading(true);
+    try {
+      // Clearing both fields and setting emoji (we'll store emoji string in logoUrl)
+      // The UI already handles strings that aren't URLs/base64 by not rendering <img>
+      await updateClanLogo(emoji);
+      setShowEmojiPicker(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLogoUploading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      if (event.target?.result) {
+        try {
+          const compressed = await compressImage(event.target.result as string, 400, 400, 0.5);
+          await updateClanLogo(compressed);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLogoUploading(false);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleDeleteMember = async (memberId: string, name: string, definitive: boolean = false) => {
     const actionText = definitive ? 'BANIR' : 'EXPULSAR';
@@ -1267,6 +1352,77 @@ export function GerenciaView() {
              Gestão de <span className="text-gaming-gold">Membros</span>
            </h2>
         </div>
+      </div>
+
+      {/* Global Clan Settings (Leader Only) */}
+      <div className={`bg-gaming-card/60 border border-white/5 rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
+         {!isEcoMode && (
+           <div className="absolute inset-0 opacity-5 pointer-events-none">
+             <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30" />
+           </div>
+         )}
+         
+         <div className="relative group">
+           <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-gaming-gold/30 p-2 relative flex items-center justify-center bg-black/40 overflow-hidden ${logoUploading ? 'animate-pulse' : ''}`}>
+             {clan?.logoUrl || clan?.guideImagePost1 ? (
+               ((clan.logoUrl && clan.logoUrl.length < 8) || (clan.guideImagePost1 && clan.guideImagePost1.length < 8)) ? (
+                 <span className="text-7xl md:text-8xl select-none">
+                   {clan.logoUrl || clan.guideImagePost1}
+                 </span>
+               ) : (
+                 <img 
+                   src={clan?.logoUrl || clan?.guideImagePost1} 
+                   alt="Global Logo" 
+                   className="w-full h-full object-contain"
+                 />
+               )
+             ) : (
+               <span className="text-7xl md:text-8xl select-none">🐺</span>
+             )}
+             <label className="absolute inset-x-0 bottom-0 top-1/2 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-1 z-10">
+               <Camera size={16} className="text-gaming-gold" />
+               <span className="text-[8px] font-black uppercase tracking-widest text-white">Galeria</span>
+               <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+             </label>
+
+             <button 
+               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+               className="absolute inset-x-0 top-0 bottom-1/2 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-1 z-10 border-b border-white/10"
+             >
+               <span className="text-lg">😊</span>
+               <span className="text-[8px] font-black uppercase tracking-widest text-white">Emoji</span>
+             </button>
+           </div>
+         </div>
+
+         {showEmojiPicker && (
+           <motion.div 
+             initial={isEcoMode ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+             animate={{ opacity: 1, y: 0 }}
+             className={`w-full max-w-xs mx-auto grid grid-cols-8 gap-2 p-4 ${isEcoMode ? 'bg-black/90' : 'bg-black/40 backdrop-blur-xl'} border border-gaming-gold/20 rounded-2xl`}
+           >
+             {clanEmojis.map(emoji => (
+               <button
+                 key={emoji}
+                 onClick={() => handleEmojiSelect(emoji)}
+                 className={`text-2xl ${isEcoMode ? '' : 'hover:scale-125'} transition-transform p-1 rounded-lg hover:bg-white/5`}
+               >
+                 {emoji}
+               </button>
+             ))}
+           </motion.div>
+         )}
+
+         <div className="flex flex-col gap-4 flex-1 text-center md:text-left">
+           <div>
+             <span className="text-gaming-gold font-black uppercase text-[10px] tracking-[0.4em]">Identidade Visual Global</span>
+             <h3 className="text-2xl md:text-3xl font-display font-black uppercase italic text-white tracking-tighter">Personalizar <span className="text-gaming-gold">Logomarca</span></h3>
+           </div>
+           <p className="text-xs text-white/40 font-bold uppercase italic leading-relaxed max-w-lg">
+             Esta imagem será exibida para todos os membros na tela de Login e na Barra Lateral. Escolha uma imagem que represente a grandeza da Ordem Suprema.
+           </p>
+           {logoUploading && <span className="text-[9px] font-black uppercase tracking-widest text-gaming-gold animate-bounce">Sincronizando com os servidores...</span>}
+         </div>
       </div>
 
       {/* Reports Section */}
