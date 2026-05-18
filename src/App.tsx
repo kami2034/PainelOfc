@@ -8,9 +8,10 @@ import { BaseStats, DetailedStats } from './components/Stats';
 import { MemberList } from './components/MemberList';
 import { Login } from './components/Login';
 import { NicknameSelector } from './components/NicknameSelector';
-import { useClan } from './context/ClanContext';
+import { useClan, ClanProvider } from './context/ClanContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDevice } from './hooks/useDevice';
+
 import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { LevelUpModal } from './components/LevelUpModal';
 import { db } from './lib/firebase';
@@ -29,6 +30,14 @@ import {
 import { MissoesView } from './components/MissoesView';
 
 export default function App() {
+  return (
+    <ClanProvider>
+      <AppContent />
+    </ClanProvider>
+  );
+}
+
+function AppContent() {
   const { isMobile, viewMode, setViewMode } = useDevice();
   const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, setActiveSubTab } = useClan();
   const [initializing, setInitializing] = useState(false);
