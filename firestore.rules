@@ -17,7 +17,7 @@ service cloud.firestore {
     function isClanAdmin(clanId) {
       return request.auth.token.email == 'ryankevyn3000@gmail.com' || (
         exists(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)) && 
-        get(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)).data.role in ['leader', 'co-leader']
+        get(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)).data.role == 'leader'
       );
     }
 
@@ -37,34 +37,20 @@ service cloud.firestore {
     }
 
     function isValidMember(data) {
-      return (data.get('name', 'Guerreiro') is string) &&
-             (data.get('role', 'member') in ['leader', 'co-leader', 'elder', 'member']) &&
-             (data.get('trophies', 0) is number) &&
-             (data.get('xp', 0) is number) &&
-             (data.get('level', 0) is number) &&
-             (data.get('completedMissions', []) is list) &&
-             (data.get('visitedMissionsBoard', false) is bool) &&
-             (data.get('donations', 0) is number) &&
-             (data.get('heroPower', 0) is number) &&
-             (data.get('diamonds', 0) is number) &&
-             (data.get('boxes', 0) is number) &&
-             (data.get('coins', 0) is number) &&
-             (data.get('premiumPass', false) is bool) &&
-             (data.get('lastDailyBonus', '') is string) &&
-             (data.get('appTheme', 'dark') is string) &&
-             (data.get('chatTheme', 'dark') is string) &&
-             (data.get('opacityLevel', 80) is number) &&
-             (data.get('lastCelebratedLevel', 0) is number) &&
-             (data.get('status', 'online') is string) &&
-             (data.get('avatarUrl', '') is string) &&
-             (data.get('joinedAt', '') is string) &&
-             (data.get('userId', '') is string);
+      return (data.get('name', '') == null || data.get('name', '') is string) &&
+             (data.get('role', 'warrior') == null || data.get('role', 'warrior') in ['leader', 'diplomat', 'military_leader', 'recruiter', 'muse', 'warrior']) &&
+             (data.get('trophies', 0) == null || data.get('trophies', 0) is number) &&
+             (data.get('xp', 0) == null || data.get('xp', 0) is number) &&
+             (data.get('level', 0) == null || data.get('level', 0) is number) &&
+             (data.get('completedMissions', []) == null || data.get('completedMissions', []) is list) &&
+             (data.get('visitedMissionsBoard', false) == null || data.get('visitedMissionsBoard', false) is bool) &&
+             (data.get('userId', '') == null || data.get('userId', '') is string);
     }
 
     function isValidMemberCreate(data) {
       return isValidMember(data) && 
              data.userId == request.auth.uid &&
-             (data.role == 'member' || request.auth.token.email == 'ryankevyn3000@gmail.com');
+             (data.role == 'warrior' || request.auth.token.email == 'ryankevyn3000@gmail.com');
     }
 
     function isValidAnnouncement(data) {
@@ -92,7 +78,7 @@ service cloud.firestore {
     // Clans
     match /clans/{clanId} {
       allow get: if isSignedIn();
-      allow list: if isSignedIn(); // We might want to browse clans
+      allow list: if isSignedIn(); 
       allow create: if isSignedIn() && !isBanned() && isValidClan(incoming()) && incoming().ownerId == request.auth.uid;
       allow update: if isSignedIn() && !isBanned() && isValidClan(incoming()) && (
         isClanAdmin(clanId) && 
@@ -103,26 +89,24 @@ service cloud.firestore {
 
       // Members Subcollection
       match /members/{memberId} {
-        allow get: if isSignedIn();
-        allow list: if isSignedIn();
+        allow get, list: if isSignedIn();
         allow create: if isSignedIn() && !isBanned() && isValidMemberCreate(incoming());
         allow update: if isSignedIn() && !isBanned() && (
-          (isOwner(existing()) && incoming().diff(existing()).affectedKeys().hasOnly([
+          (request.auth.uid == memberId && incoming().diff(existing()).affectedKeys().hasOnly([
             'status', 'trophies', 'donations', 'avatarUrl', 'name', 
             'heroPower', 'diamonds', 'boxes', 'coins', 'lastDailyBonus', 
             'appTheme', 'chatTheme', 'premiumPass', 'xp', 'level',
             'completedMissions', 'visitedMissionsBoard', 'opacityLevel',
-            'lastCelebratedLevel', 'joinedAt', 'userId', 'id'
-          ])) ||
-          (isClanAdmin(clanId) && incoming().diff(existing()).affectedKeys().hasOnly(['role']))
-        ) && isValidMember(incoming());
+            'lastCelebratedLevel', 'joinedAt', 'userId', 'id', 'profileBorder', 'profileBg'
+          ]) && isValidMember(incoming())) ||
+          isClanAdmin(clanId)
+        );
         allow delete: if isSignedIn() && (isOwner(existing()) || isClanAdmin(clanId));
       }
 
       // Announcements Subcollection
       match /announcements/{announcementId} {
-        allow get: if isSignedIn() && isClanMember(clanId);
-        allow list: if isSignedIn() && isClanMember(clanId);
+        allow get, list: if isSignedIn() && isClanMember(clanId);
         allow create: if isSignedIn() && isClanAdmin(clanId) && isValidAnnouncement(incoming());
         allow update: if isSignedIn() && isClanAdmin(clanId) && isValidAnnouncement(incoming()) && 
                     incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content']);
@@ -131,11 +115,16 @@ service cloud.firestore {
 
       // Wars Subcollection
       match /wars/{warId} {
-        allow get: if isSignedIn() && isClanMember(clanId);
-        allow list: if isSignedIn() && isClanMember(clanId);
+        allow get, list: if isSignedIn() && isClanMember(clanId);
         allow create: if isSignedIn() && isClanAdmin(clanId) && isValidWarLog(incoming());
         allow update: if isSignedIn() && isClanAdmin(clanId) && isValidWarLog(incoming());
         allow delete: if isSignedIn() && isClanAdmin(clanId);
+      }
+
+      // Theft Reports Subcollection
+      match /theft_reports/{reportId} {
+        allow create: if isSignedIn() && isClanMember(clanId);
+        allow get, list, delete: if isSignedIn() && isClanAdmin(clanId);
       }
     }
 

@@ -36,7 +36,7 @@ export const joinClan = async (userId: string, userName: string, userEmail: stri
   await setDoc(memberRef, {
     userId,
     name: userName,
-    role: isLeader ? 'leader' : 'member',
+    role: isLeader ? 'leader' : 'warrior',
     trophies: 0,
     donations: 0,
     xp: 0,

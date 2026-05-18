@@ -10,7 +10,8 @@
         "description": { "type": "string", "description": "Clan description" },
         "capacity": { "type": "number", "description": "Max capacity of members" },
         "ownerId": { "type": "string", "description": "UID of the clan owner" },
-        "trophyCount": { "type": "number", "description": "Total trophies" }
+        "trophyCount": { "type": "number", "description": "Total trophies" },
+        "guideImagePost1": { "type": "string", "description": "Main guide image URL" }
       },
       "required": ["name", "level", "ownerId"]
     },
@@ -25,7 +26,24 @@
         "trophies": { "type": "number", "description": "Individual trophy count" },
         "donations": { "type": "number", "description": "Number of card donations" },
         "status": { "type": "string", "enum": ["online", "offline"] },
-        "avatarUrl": { "type": "string", "description": "Profile picture URL" }
+        "avatarUrl": { "type": "string", "description": "Profile picture URL" },
+        "profileBg": { "type": "string", "description": "Profile background image URL or hex" },
+        "profileBorder": { "type": "string", "description": "Selected profile border ID" },
+        "xp": { "type": "number", "description": "Experience points" },
+        "level": { "type": "number", "description": "Member level" },
+        "diamonds": { "type": "number", "description": "Diamond currency" },
+        "coins": { "type": "number", "description": "Gold coins" },
+        "boxes": { "type": "number", "description": "Number of loot boxes" },
+        "heroPower": { "type": "number", "description": "Total hero power" },
+        "premiumPass": { "type": "boolean", "description": "Whether user has premium pass" },
+        "lastDailyBonus": { "type": "string", "description": "ISO date of last bonus claim" },
+        "appTheme": { "type": "string", "description": "Selected application theme" },
+        "chatTheme": { "type": "string", "description": "Selected chat background theme" },
+        "opacityLevel": { "type": "number", "description": "UI opacity percentage" },
+        "lastCelebratedLevel": { "type": "number", "description": "Last level up celebrated" },
+        "joinedAt": { "type": "string", "description": "ISO join date" },
+        "completedMissions": { "type": "array", "items": { "type": "string" }, "description": "List of mission IDs completed" },
+        "visitedMissionsBoard": { "type": "boolean", "description": "Whether first time on missions" }
       },
       "required": ["userId", "name", "role", "trophies"]
     },
@@ -37,7 +55,7 @@
         "title": { "type": "string", "description": "Announcement title" },
         "content": { "type": "string", "description": "Announcement content" },
         "authorId": { "type": "string", "description": "UID of the announcer" },
-        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+        "createdAt": { "type": "object", "description": "Server timestamp" }
       },
       "required": ["title", "content", "authorId", "createdAt"]
     },
@@ -48,11 +66,22 @@
       "properties": {
         "opponent": { "type": "string", "description": "Opponent clan name" },
         "result": { "type": "string", "enum": ["win", "loss", "draw"] },
-        "date": { "type": "string", "format": "date-time", "description": "War date" },
+        "date": { "type": "object", "description": "War date Server timestamp" },
         "scoreSelf": { "type": "number", "description": "Score of our clan" },
         "scoreOpponent": { "type": "number", "description": "Score of the opponent" }
       },
       "required": ["opponent", "result", "date", "scoreSelf", "scoreOpponent"]
+    },
+    "TheftReport": {
+      "title": "TheftReport",
+      "description": "A report of theft made by a member",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string", "description": "UID of the reporter" },
+        "reporterName": { "type": "string", "description": "Name of the reporter" },
+        "timestamp": { "type": "string", "description": "ISO date of the report" }
+      },
+      "required": ["reporterId", "reporterName", "timestamp"]
     }
   },
   "firestore": {
@@ -71,6 +100,10 @@
     "/clans/{clanId}/wars/{warId}": {
       "schema": "WarLog",
       "description": "History of clan wars"
+    },
+    "/clans/{clanId}/theft_reports/{reportId}": {
+      "schema": "TheftReport",
+      "description": "Reports of theft available to leaders"
     }
   }
 }

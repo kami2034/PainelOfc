@@ -1,6 +1,6 @@
 {
   "name": "Aliança Suprema Dashboard",
-  "description": "Dashboard de gerenciamento para a Aliança Suprema com foco em estratégia e coordenação de elite.",
+  "description": "Dashboard oficial de gerenciamento da Aliança Suprema Ordem, com sistema de ranking por poder, guia estratégico e personalização avançada de perfil.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

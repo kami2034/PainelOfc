@@ -39,14 +39,17 @@ import {
   Image as ImageIcon,
   ArrowLeft,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  X
 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 
 // --- GUIA VIEW ---
 export function GuiaView() {
-  const { isEcoMode, myMember, clan, updateClanGuideImage } = useClan();
+  const { isEcoMode, myMember, clan, updateClanGuideImage, reportTheft } = useClan();
   const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
+  const [showTheftReported, setShowTheftReported] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<'guias' | 'avisos'>('guias');
 
   const isLeader = myMember?.role === 'leader';
   const displayImage = clan?.guideImagePost1 || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
@@ -170,6 +173,18 @@ export function GuiaView() {
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8 max-w-6xl mx-auto w-full pb-20">
+      <AnimatePresence>
+        {showTheftReported && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-green-500 text-black rounded-full font-black uppercase text-xs tracking-widest shadow-[0_0_50px_rgba(34,197,94,0.3)] flex items-center gap-3"
+          >
+            <CheckCircle2 size={18} /> Denúncia Enviada aos Líderes
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex flex-col">
            <div className="flex items-center gap-3 mb-2">
@@ -188,6 +203,79 @@ export function GuiaView() {
         </div>
       </div>
 
+      {/* Guia Tabs Swiper */}
+      <div className="flex gap-4 p-1 bg-white/5 border border-white/10 rounded-2xl w-fit">
+        <button 
+          onClick={() => setActiveSubTab('guias')}
+          className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === 'guias' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+        >
+          Guias Oficiais
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('avisos')}
+          className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'avisos' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+        >
+          Avisos
+          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full animate-ping" />
+        </button>
+      </div>
+
+      {activeSubTab === 'avisos' ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-[#0a0a0a] border-2 border-red-600/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-[0_0_50px_rgba(220,38,38,0.1)]"
+        >
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-5 pointer-events-none">
+             <Skull size={400} className="absolute -bottom-20 -right-20 text-red-600" />
+          </div>
+
+          <div className="relative flex flex-col gap-8">
+            <div className="flex flex-col gap-3">
+              <span className="text-red-500 font-black uppercase text-[10px] tracking-[0.4em] flex items-center gap-2">
+                <AlertTriangle size={14} /> ALERTA DE MOBILIZAÇÃO
+              </span>
+              <h3 className="text-4xl md:text-6xl font-display font-black uppercase italic tracking-tighter text-white">
+                GUERRA ENTRA <span className="text-red-600">SERVIDORES</span>
+              </h3>
+            </div>
+
+            <div className="p-8 bg-red-600/5 border border-red-600/20 rounded-3xl">
+              <p className="text-lg text-white/80 font-bold uppercase italic leading-relaxed">
+                ESTAMOS PREPARANDO UM GUIA COMPLETO PARA DOMINAR A LUTA DE GUERRA ENTRE SERVIDORES. 
+                SAIBA EXATAMENTE QUAIS MISSÕES FAZER POR DIA PARA DERROTAR QUALQUER OUTRO REINO.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-6 p-6 bg-white/5 border border-white/10 rounded-2xl">
+              <div className="w-16 h-16 bg-gaming-gold/20 rounded-full flex items-center justify-center text-gaming-gold animate-pulse">
+                <Clock size={32} />
+              </div>
+              <div>
+                <h4 className="font-display font-black uppercase text-xl text-gaming-gold italic">LANÇAMENTO IMINENTE</h4>
+                <p className="text-sm text-white/40 font-bold uppercase italic">Será entregue completo amanhã de manhã (v6.0 ALPHA).</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-40 grayscale pointer-events-none">
+              <div className="p-6 border border-white/10 rounded-2xl bg-white/5">
+                <span className="text-[10px] font-black uppercase text-red-600 tracking-widest block mb-2">🔒 MISSÃO DIÁRIA</span>
+                <p className="text-xs font-bold uppercase italic text-white/20">Aguardando dados estratégicos...</p>
+              </div>
+              <div className="p-6 border border-white/10 rounded-2xl bg-white/5">
+                <span className="text-[10px] font-black uppercase text-red-600 tracking-widest block mb-2">🔒 PONTOS DE ATAQUE</span>
+                <p className="text-xs font-bold uppercase italic text-white/20">Aguardando dados estratégicos...</p>
+              </div>
+              <div className="p-6 border border-white/10 rounded-2xl bg-white/5">
+                <span className="text-[10px] font-black uppercase text-red-600 tracking-widest block mb-2">🔒 ESTRATÉGIA SERVER</span>
+                <p className="text-xs font-bold uppercase italic text-white/20">Aguardando dados estratégicos...</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <>
       {/* Main Feature: Breaking News Portal */}
       <div 
         onClick={() => setSelectedGuide('evoluir')}
@@ -223,50 +311,116 @@ export function GuiaView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Guide Item 1 */}
-        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col gap-6 hover:border-blue-500/30 transition-all cursor-pointer group hover:bg-blue-500/[0.02]">
-           <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform border border-blue-500/20">
+        <div className="relative group overflow-hidden bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 flex flex-col gap-6 hover:border-blue-500/30 transition-all cursor-not-allowed">
+           <div className="absolute top-4 right-4 z-10">
+              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                <Lock size={10} /> Em Obras
+              </span>
+           </div>
+           
+           <div className="w-16 h-16 bg-linear-to-br from-blue-500/20 to-blue-500/5 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
               <Sword size={32} />
            </div>
-           <div>
-              <h4 className="font-display font-black uppercase text-2xl mb-2 italic">Táticas de Batalha ⚔️</h4>
-              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic">
-                Aprenda a coordenar ataques em grupo, usar curandeiros e maximizar o dano de área em guerras de clã.
+           
+           <div className="relative z-10">
+              <h4 className="font-display font-black uppercase text-2xl mb-2 italic text-white group-hover:text-blue-200 transition-colors">Táticas de Batalha ⚔️</h4>
+              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+                Coordenando ataques de elite e táticas de cerco avançadas para dominar fortificações inimigas.
               </p>
            </div>
-           <div className="mt-auto pt-6 border-t border-white/5 flex items-center text-blue-400 text-[10px] font-black uppercase tracking-widest gap-2">
-              Ver Dicas Militares <ChevronRight size={14} />
+           
+           <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-blue-400/50 text-[10px] font-black uppercase tracking-widest gap-2">
+                 Ver Dicas Militares <ChevronRight size={14} />
+              </div>
+              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/20">
+                <Zap size={14} />
+              </div>
+           </div>
+
+           {/* Animated development glow */}
+           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500/20">
+              <motion.div 
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="w-1/2 h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
+              />
            </div>
         </div>
 
         {/* Guide Item 2 */}
-        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col gap-6 hover:border-gaming-gold/30 transition-all cursor-pointer group hover:bg-gaming-gold/[0.02]">
-           <div className="w-16 h-16 bg-gaming-gold/10 rounded-2xl flex items-center justify-center text-gaming-gold group-hover:scale-110 transition-transform border border-gaming-gold/20">
+        <div className="relative group overflow-hidden bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 flex flex-col gap-6 hover:border-gaming-gold/30 transition-all cursor-not-allowed">
+           <div className="absolute top-4 right-4 z-10">
+              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                <Lock size={10} /> Em Obras
+              </span>
+           </div>
+
+           <div className="w-16 h-16 bg-linear-to-br from-gaming-gold/20 to-gaming-gold/5 rounded-2xl flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:-rotate-6 transition-all border border-gaming-gold/20 shadow-[0_0_20px_rgba(251,191,36,0.1)]">
               <Gem size={32} />
            </div>
-           <div>
-              <h4 className="font-display font-black uppercase text-2xl mb-2 italic">Farm de Diamantes 💎</h4>
-              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic">
-                Onde encontrar os baús mais raros e como completar eventos semanais que pagam diamantes extras.
+
+           <div className="relative z-10">
+              <h4 className="font-display font-black uppercase text-2xl mb-2 italic text-white group-hover:text-gaming-gold transition-colors">Farm de Diamantes 💎</h4>
+              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+                Otimização completa de recursos para garantir o máximo de diamantes em todos os eventos ativos.
               </p>
            </div>
-           <div className="mt-auto pt-6 border-t border-white/5 flex items-center text-gaming-gold text-[10px] font-black uppercase tracking-widest gap-2">
-              Dicas de Economia <ChevronRight size={14} />
+
+           <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-gaming-gold/50 text-[10px] font-black uppercase tracking-widest gap-2">
+                 Dicas de Economia <ChevronRight size={14} />
+              </div>
+              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/20">
+                <Zap size={14} />
+              </div>
+           </div>
+
+           {/* Animated development glow */}
+           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gaming-gold/20">
+              <motion.div 
+                animate={{ x: ['100%', '-100%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="w-1/2 h-full bg-gaming-gold shadow-[0_0_10px_rgba(251,191,36,0.8)]"
+              />
            </div>
         </div>
 
         {/* Guide Item 3 */}
-        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col gap-6 hover:border-green-500/30 transition-all cursor-pointer group hover:bg-green-500/[0.02]">
-           <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform border border-green-500/20">
+        <div className="relative group overflow-hidden bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 flex flex-col gap-6 hover:border-green-500/30 transition-all cursor-not-allowed">
+           <div className="absolute top-4 right-4 z-10">
+              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                <Lock size={10} /> Em Obras
+              </span>
+           </div>
+
+           <div className="w-16 h-16 bg-linear-to-br from-green-500/20 to-green-500/5 rounded-2xl flex items-center justify-center text-green-400 group-hover:scale-110 group-hover:rotate-12 transition-all border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.1)]">
               <Shield size={32} />
            </div>
-           <div>
-              <h4 className="font-display font-black uppercase text-2xl mb-2 italic">Defesa de Base 🛡️</h4>
-              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic">
-                O layout perfeito para o seu QG para evitar saques norturnos e proteger seus recursos mais valiosos.
+
+           <div className="relative z-10">
+              <h4 className="font-display font-black uppercase text-2xl mb-2 italic text-white group-hover:text-green-300 transition-colors">Defesa de Base 🛡️</h4>
+              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+                Sistemas de defesa avançada e layouts anti-loot para proteger sua hegemonia no servidor.
               </p>
            </div>
-           <div className="mt-auto pt-6 border-t border-white/5 flex items-center text-green-400 text-[10px] font-black uppercase tracking-widest gap-2">
-              Manual de Fortificação <ChevronRight size={14} />
+
+           <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-green-400/50 text-[10px] font-black uppercase tracking-widest gap-2">
+                 Manual de Fortificação <ChevronRight size={14} />
+              </div>
+              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/20">
+                <Zap size={14} />
+              </div>
+           </div>
+
+           {/* Animated development glow */}
+           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-green-500/20">
+              <motion.div 
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                className="w-1/2 h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"
+              />
            </div>
         </div>
 
@@ -296,7 +450,11 @@ export function GuiaView() {
                        <AlertTriangle size={14} /> Multa de 50 Moedas
                     </div>
                     <button 
-                      onClick={() => alert('Sistema de denúncias ativo!')}
+                      onClick={async () => {
+                        await reportTheft();
+                        setShowTheftReported(true);
+                        setTimeout(() => setShowTheftReported(false), 5000);
+                      }}
                       className="flex items-center gap-3 px-6 py-2 bg-red-500 text-black rounded-xl hover:bg-white transition-all font-black uppercase text-[9px] tracking-widest"
                     >
                        <MessageSquareWarning size={14} /> Denunciar Furto
@@ -306,6 +464,8 @@ export function GuiaView() {
            </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -313,91 +473,6 @@ export function GuiaView() {
 // --- COMBATE VIEW ---
 export function CombateView() {
   return <DevelopmentView tab="combate" progress={90} />;
-}
-
-// --- INVENTARIO VIEW ---
-export function InventarioView() {
-  const { myMember, updateMemberData, isEcoMode } = useClan();
-  
-  const handleRedeemPass = () => {
-    if (!myMember) return;
-    if (myMember.premiumPass) {
-       alert("Você já possui o Passe Premium!");
-       return;
-    }
-    if (myMember.diamonds < 200) {
-      alert("Você não tem diamantes suficientes! (Necessário: 200)");
-      // For demo, let's allow adding diamonds
-      if (confirm("Gostaria de adicionar 200 diamantes de bônus para testar?")) {
-        updateMemberData({ diamonds: (myMember.diamonds || 0) + 200 });
-      }
-      return;
-    }
-    
-    updateMemberData({ 
-      diamonds: myMember.diamonds - 200,
-      premiumPass: true
-    });
-    alert("Passe Premium resgatado com sucesso!");
-  };
-
-  return (
-    <div className="flex flex-col gap-6 p-4 md:p-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-display font-black uppercase italic tracking-tighter">
-          Seu <span className="text-gaming-gold">Inventário</span>
-        </h2>
-        <div className="flex items-center gap-3 bg-gaming-gold/10 border border-gaming-gold/20 px-4 py-2 rounded-xl">
-           <Gem size={20} className="text-gaming-gold" />
-           <span className="font-mono font-black text-gaming-gold">{myMember?.diamonds || 0}</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col items-center justify-center min-h-[400px] border-dashed">
-          <Backpack size={64} className="text-white/10 mb-4" />
-          <p className="text-white/20 uppercase font-black text-[10px] tracking-[0.3em]">Mochila Vazia</p>
-        </div>
-
-        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-             <div className="w-12 h-12 bg-gaming-gold/20 rounded-xl flex items-center justify-center text-gaming-gold border border-gaming-gold/30">
-                <Star size={24} fill="currentColor" />
-             </div>
-             <div>
-                <h4 className="font-display font-black uppercase text-sm">Passe Premium</h4>
-                <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Temporada 01</p>
-             </div>
-          </div>
-
-          <div className="space-y-3">
-             <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/60">
-                <CheckCircle2 size={12} className="text-green-500" /> Recompensas Exclusivas
-             </div>
-             <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/60">
-                <CheckCircle2 size={12} className="text-green-500" /> Bônus de XP 50%
-             </div>
-             <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-white/60">
-                <CheckCircle2 size={12} className="text-green-500" /> Itens Lendários
-             </div>
-          </div>
-
-          <div className="mt-auto pt-6 border-t border-white/5 flex flex-col gap-3">
-             <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
-                <span className="text-white/40">Preço:</span>
-                <span className="text-gaming-gold flex items-center gap-1"><Gem size={14} /> 200</span>
-             </div>
-             <button 
-              onClick={handleRedeemPass}
-              className={`w-full py-4 rounded-xl font-display font-black uppercase tracking-widest transition-all ${myMember?.premiumPass ? 'bg-green-500 text-black' : 'bg-white text-black hover:bg-gaming-gold shadow-[0_0_20px_rgba(255,255,255,0.1)]'}`}
-             >
-               {myMember?.premiumPass ? 'Ativado' : 'Resgatar Agora'}
-             </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // --- MAPA VIEW ---
@@ -467,6 +542,47 @@ export function PerfilView() {
   const { myMember, user, updateMemberData, completeMission, isEcoMode } = useClan();
   const [editingPower, setEditingPower] = useState(false);
   const [newPower, setNewPower] = useState(myMember?.heroPower || 0);
+
+  const [profileSubView, setProfileSubView] = useState<'main' | 'aura_store'>('main');
+  const [purchaseStatus, setPurchaseStatus] = useState<{ id: string, message: string, type: 'success' | 'error' } | null>(null);
+
+  const borders = [
+    { id: 'border_cyan', title: 'Cibernética Blue', desc: 'Aura neon azul.', price: 50, color: 'border-cyan-400' },
+    { id: 'border_purple', title: 'Aura Púrpura', desc: 'Proteção mística violeta.', price: 50, color: 'border-purple-500' },
+    { id: 'border_gold', title: 'Fogo Dourado', desc: 'A borda suprema animada.', price: 50, color: 'border-gaming-gold', animated: true }
+  ];
+
+  const handleBuyBorder = (border: any) => {
+    if ((myMember?.coins || 0) < border.price) {
+      setPurchaseStatus({ id: border.id, message: "Moedas insuficientes!", type: 'error' });
+      setTimeout(() => setPurchaseStatus(null), 2000);
+      return;
+    }
+
+    updateMemberData({
+      coins: (myMember?.coins || 0) - border.price,
+      profileBorder: border.id
+    });
+    setPurchaseStatus({ id: border.id, message: "Equipado com Sucesso!", type: 'success' });
+    setTimeout(() => setPurchaseStatus(null), 2000);
+  };
+
+  const getBorderClasses = (borderId?: string) => {
+    if (isEcoMode) {
+      switch (borderId) {
+        case 'border_cyan': return 'border-2 border-cyan-400';
+        case 'border_purple': return 'border-2 border-purple-500';
+        case 'border_gold': return 'border-2 border-gaming-gold';
+        default: return 'border-2 border-white/10';
+      }
+    }
+    switch (borderId) {
+      case 'border_cyan': return 'border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]';
+      case 'border_purple': return 'border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]';
+      case 'border_gold': return 'border-2 border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.6)] animate-pulse';
+      default: return 'border-2 border-gaming-gold/30';
+    }
+  };
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -496,26 +612,88 @@ export function PerfilView() {
       color: 'text-red-500',
       editable: true 
     },
-    { label: 'Diamantes', val: 0, icon: Gem, color: 'text-gaming-gold' }
+    { label: 'Diamantes', val: myMember?.diamonds || 0, icon: Gem, color: 'text-gaming-gold' }
   ];
+
+  if (profileSubView === 'aura_store') {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex flex-col gap-8 p-4 md:p-8 max-w-4xl mx-auto w-full pb-20"
+      >
+        <button 
+          onClick={() => setProfileSubView('main')}
+          className="flex items-center gap-2 text-gaming-gold font-black uppercase text-[10px] tracking-widest hover:translate-x-[-4px] transition-transform w-fit"
+        >
+          <ArrowLeft size={16} /> Voltar ao Perfil
+        </button>
+
+        <div className="bg-gaming-card border border-gaming-border rounded-[2.5rem] overflow-hidden shadow-2xl">
+          <div className="p-8 border-b border-gaming-border flex items-center justify-between bg-white/[0.02]">
+            <div>
+              <h3 className="text-2xl font-display font-black uppercase italic text-white leading-none">Customização de Aura</h3>
+              <p className="text-[10px] text-gaming-gold font-bold uppercase tracking-[0.3em] mt-2">Escolha sua borda lendária</p>
+            </div>
+          </div>
+          
+          <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {borders.map(border => (
+              <div 
+                key={border.id}
+                className={`p-6 rounded-3xl border transition-all ${myMember?.profileBorder === border.id ? 'border-gaming-gold bg-gaming-gold/5 shadow-[0_0_30px_rgba(251,191,36,0.1)]' : 'border-white/5 bg-white/[0.01] hover:border-white/20'}`}
+              >
+                <div className="flex flex-col items-center text-center gap-5">
+                  <div className={`w-20 h-20 rounded-full ${border.color} border-2 relative flex items-center justify-center ${border.animated && !isEcoMode ? 'animate-pulse' : ''} bg-black/20`}>
+                    <User size={36} className="text-white/10" />
+                    {border.animated && !isEcoMode && (
+                       <motion.div 
+                         animate={{ rotate: 360 }}
+                         transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                         className="absolute inset-0 border border-t-white/40 border-transparent rounded-full"
+                       />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] font-black uppercase text-white tracking-widest">{border.title}</span>
+                  </div>
+                  <button 
+                    onClick={() => handleBuyBorder(border)}
+                    disabled={myMember?.profileBorder === border.id}
+                    className={`w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      myMember?.profileBorder === border.id 
+                        ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                        : 'bg-gaming-gold text-black hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5'
+                    }`}
+                  >
+                    {purchaseStatus?.id === border.id ? purchaseStatus.message : (myMember?.profileBorder === border.id ? 'Equipado' : '50 Moedas')}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-8">
       <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8 bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 md:p-8">
-         <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl border-2 border-gaming-gold/30 p-1 relative group bg-black/20 overflow-hidden">
-            {!isEcoMode && <div className="absolute -inset-2 bg-gaming-gold/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />}
+         <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1 relative group bg-black/20 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
+            {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold/20' : 'bg-gaming-gold/10'}`} />}
             <img 
               src={myMember?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} 
               alt="Avatar" 
-              className="w-full h-full rounded-2xl object-cover relative z-10"
+              className="w-full h-full rounded-full object-cover relative z-10"
               referrerPolicy="no-referrer"
             />
-            <button 
-              className="absolute inset-0 z-20 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-gaming-gold gap-2 pointer-events-none"
+            <div 
+              className="absolute inset-0 z-20 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-gaming-gold gap-2 pointer-events-none rounded-full"
             >
               <Camera size={24} />
-              <span className="text-[8px] font-black uppercase tracking-widest">Alterar Foto</span>
-            </button>
+              <span className="text-[8px] font-black uppercase tracking-widest">Trocar Foto</span>
+            </div>
             <input 
               type="file"
               accept="image/*"
@@ -523,9 +701,20 @@ export function PerfilView() {
               className="absolute inset-0 opacity-0 z-30 cursor-pointer"
             />
          </div>
-         <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-2 flex-1">
-            <span className="text-[10px] uppercase font-black text-gaming-gold tracking-[0.4em]">Guerreiro de Elite</span>
-            <h2 className="text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter">{myMember?.name || 'Recruta'}</h2>
+
+         <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-4 flex-1">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] uppercase font-black text-gaming-gold tracking-[0.4em]">Guerreiro de Elite</span>
+              <h2 className="text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter">{myMember?.name || 'Recruta'}</h2>
+            </div>
+
+            <button 
+              onClick={() => setProfileSubView('aura_store')}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-gaming-gold hover:border-gaming-gold/40 hover:bg-gaming-gold/5 transition-all group"
+            >
+              <Palette size={14} className="group-hover:rotate-12 transition-transform" />
+              Personalizar Aura
+            </button>
             <p className="text-white/40 text-[10px] md:text-xs uppercase font-bold tracking-[0.2em]">{user?.email}</p>
             <div className="flex gap-2 mt-4 flex-wrap justify-center lg:justify-start">
                {myMember?.premiumPass && (
@@ -535,6 +724,7 @@ export function PerfilView() {
             </div>
          </div>
       </div>
+
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
          {stats.map(s => (
@@ -656,15 +846,41 @@ export function ConfiguracoesView() {
            
            <div className="space-y-8">
               <div>
+                  <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] block mb-4">Arte de Fundo do Perfil</span>
+                  <div className="grid grid-cols-2 gap-2">
+                     {[
+                       { id: 'padrão', label: 'Padrão', url: '/src/assets/images/clan_bg_art_1778972376934.png' },
+                       { id: 'cibernética', label: 'Cibernética', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' },
+                       { id: 'guerra', label: 'Guerra', url: 'https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070' },
+                       { id: 'moderna', label: 'Moderna', url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2070' }
+                     ].map(art => (
+                       <button 
+                         key={art.id}
+                         onClick={() => updateMemberData({ profileBg: art.url })}
+                         className={`relative overflow-hidden group py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${myMember?.profileBg === art.url || (!myMember?.profileBg && art.id === 'padrão') ? 'border-gaming-gold text-gaming-gold' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
+                       >
+                         <img src={art.url} className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity" alt="" />
+                         <span className="relative z-10">{art.label}</span>
+                       </button>
+                     ))}
+                  </div>
+               </div>
+
+              <div>
                  <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] block mb-4">Esquema de Cores</span>
                  <div className="grid grid-cols-2 gap-2">
-                    {['dark', 'neon', 'gold', 'classic'].map(t => (
+                    {[
+                       { id: 'dark', label: 'Sombrio' },
+                       { id: 'neon', label: 'Neon' },
+                       { id: 'gold', label: 'Dourado' },
+                       { id: 'classic', label: 'Clássico' }
+                    ].map(t => (
                       <button 
-                        key={t}
-                        onClick={() => handleThemeChange(t as any)}
-                        className={`py-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${myMember?.appTheme === t ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
+                        key={t.id}
+                        onClick={() => handleThemeChange(t.id as any)}
+                        className={`py-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${myMember?.appTheme === t.id ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
                       >
-                        {t}
+                        {t.label}
                       </button>
                     ))}
                  </div>
@@ -723,7 +939,7 @@ export function RewardsView() {
 
   const [purchaseStatus, setPurchaseStatus] = useState<{ id: string, message: string, type: 'success' | 'error' } | null>(null);
 
-  const handleClaim = (reward: any) => {
+  const handleClaimReward = (reward: any) => {
     if (reward.inDevelopment) {
       setPurchaseStatus({ id: reward.id, message: "Este item está em desenvolvimento!", type: 'error' });
       setTimeout(() => setPurchaseStatus(null), 3000);
@@ -733,7 +949,7 @@ export function RewardsView() {
     if (!myMember) return;
     
     if (myMember.diamonds < reward.price) {
-      setPurchaseStatus({ id: reward.id, message: `Saldo insuficiente! Falta ${reward.price - myMember.diamonds} diamantes.`, type: 'error' });
+      setPurchaseStatus({ id: reward.id, message: `Saldo insuficiente!`, type: 'error' });
       setTimeout(() => setPurchaseStatus(null), 3000);
       return;
     }
@@ -845,7 +1061,7 @@ export function RewardsView() {
                     </div>
                  </div>
                  <button 
-                  onClick={() => handleClaim(reward)}
+                  onClick={() => handleClaimReward(reward)}
                   className={`w-full py-4 rounded-2xl font-display font-black uppercase tracking-[0.2em] text-xs transition-all relative overflow-hidden ${
                     reward.inDevelopment 
                       ? 'bg-white/5 text-white/20 cursor-not-allowed' 
@@ -921,7 +1137,7 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
 
 // --- GERENCIA VIEW ---
 export function GerenciaView() {
-  const { members, myMember, deleteMember, banMember, updateMemberRole } = useClan();
+  const { members, myMember, deleteMember, banMember, updateMemberRole, theftReports, clearTheftReport, isEcoMode } = useClan();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -952,14 +1168,14 @@ export function GerenciaView() {
   const handlePromotion = async (memberId: string, currentRole: string) => {
     if (!myMember || myMember.role !== 'leader') return;
     
-    let newRole = 'member';
+    let newRole = 'warrior';
     let actionLabel = '';
 
-    if (currentRole === 'member') {
-      newRole = 'co-leader';
-      actionLabel = 'PROMOVER A BRAÇO DIREITO';
-    } else if (currentRole === 'co-leader') {
-      newRole = 'member';
+    if (currentRole === 'warrior') {
+      newRole = 'diplomat';
+      actionLabel = 'PROMOVER A DIPLOMATA';
+    } else if (currentRole === 'diplomat') {
+      newRole = 'warrior';
       actionLabel = 'REBAIXAR A GUERREIRO';
     } else {
       return; 
@@ -977,9 +1193,11 @@ export function GerenciaView() {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'leader': return 'Líder';
-      case 'co-leader': return 'Braço Direito';
-      case 'elder': return 'Veterano';
-      case 'member': return 'Guerreiro';
+      case 'diplomat': return 'Diplomata';
+      case 'military_leader': return 'Líder Militar';
+      case 'recruiter': return 'Recrutador';
+      case 'muse': return 'Musa';
+      case 'warrior': return 'Guerreiro';
       default: return role;
     }
   };
@@ -987,15 +1205,88 @@ export function GerenciaView() {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'leader': return 'text-gaming-gold';
-      case 'co-leader': return 'text-orange-500';
-      case 'elder': return 'text-gaming-purple';
-      case 'member': return 'text-blue-400';
+      case 'diplomat': return 'text-gaming-purple';
+      case 'military_leader': return 'text-red-500';
+      case 'recruiter': return 'text-green-500';
+      case 'muse': return 'text-pink-400';
+      case 'warrior': return 'text-blue-400';
       default: return 'text-white/60';
     }
   };
 
+  if (myMember?.role !== 'leader') {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-6 opacity-40">
+        <ShieldAlert size={64} className="text-red-500" />
+        <div className="flex flex-col items-center text-center gap-2">
+          <h2 className="text-2xl font-display font-black uppercase italic text-white tracking-tighter">Acesso Negado</h2>
+          <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60 max-w-[200px]">Somente o Líder Supremo pode gerenciar a hierarquia do clã.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-8 p-4 md:p-8 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-8 p-4 md:p-8 max-w-6xl mx-auto w-full pb-20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex flex-col">
+           <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-red-500/20 rounded-lg text-red-500 border border-red-500/30">
+                 <ShieldAlert size={16} />
+              </div>
+              <span className="text-[10px] uppercase font-black text-red-500 tracking-[0.4em]">Painel de Alto Comando</span>
+           </div>
+           <h2 className="text-4xl md:text-6xl font-display font-black uppercase italic tracking-tighter leading-none">
+             Gestão de <span className="text-gaming-gold">Membros</span>
+           </h2>
+        </div>
+      </div>
+
+      {/* Reports Section */}
+      {theftReports.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2 px-2">
+            <AlertTriangle className="text-red-500" size={20} />
+            <h3 className="text-lg font-display font-black uppercase italic text-red-500">Denúncias de Furto Pendentes ({theftReports.length})</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <AnimatePresence>
+              {theftReports.map(report => (
+                <motion.div 
+                  key={report.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9, x: -20 }}
+                  className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-red-400">Denunciado por:</span>
+                    <button 
+                      onClick={() => clearTheftReport(report.id)}
+                      className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-black transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center text-red-500">
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black uppercase text-white">{report.reporterName}</h4>
+                      <p className="text-[8px] font-mono font-bold text-white/30">{new Date(report.timestamp).toLocaleString('pt-BR')}</p>
+                    </div>
+                  </div>
+                  <div className="text-[9px] font-bold text-white/50 uppercase italic leading-relaxed">
+                    Relatou ocorrência de furto de caravana/recursos. Verificar logs do jogo.
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
            <span className="text-[10px] uppercase font-black text-red-500 tracking-[0.4em] mb-1 block">Acesso Restrito</span>
@@ -1049,48 +1340,30 @@ export function GerenciaView() {
                           </div>
                        </div>
                        
-                         <div className="flex items-center gap-2">
-                             <div className="flex gap-1">
-                                {m.role === 'member' && (
-                                  <button 
-                                    onClick={() => handlePromotion(m.id, m.role)}
-                                    className="p-2 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/20 rounded-lg hover:bg-gaming-gold hover:text-black transition-all"
-                                    title="Subir para Braço Direito"
-                                  >
-                                     <ChevronUp size={16} />
-                                  </button>
-                                )}
-                                {m.role === 'co-leader' && (
-                                  <button 
-                                    onClick={() => handlePromotion(m.id, m.role)}
-                                    className="p-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500 hover:text-white transition-all"
-                                    title="Descer para Guerreiro"
-                                  >
-                                     <ChevronDown size={16} />
-                                  </button>
-                                )}
-                             </div>
-                             <div className="flex gap-1">
-                                <button 
-                                  disabled={deletingId === m.id}
-                                  onClick={() => handleDeleteMember(m.id, m.name, false)}
-                                  className="p-2 bg-white/5 text-white/40 border border-white/10 rounded-lg hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
-                                  title="Expulsar (Pode voltar)"
-                                >
-                                   <Trash2 size={16} />
-                                </button>
-                               <button 
-                                 disabled={deletingId === m.id}
-                                 onClick={() => handleDeleteMember(m.id, m.name, true)}
-                                 className="p-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] disabled:opacity-50"
-                                 title="BANIR (Definitivo)"
-                               >
-                                  <ShieldAlert size={16} />
-                               </button>
-                            </div>
-                         </div>
+                       <div className="flex items-center gap-2">
+                         <select 
+                           value={m.role}
+                           onChange={(e) => updateMemberRole(m.id, e.target.value as any)}
+                           className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white outline-none hover:border-gaming-gold/40 transition-all cursor-pointer"
+                         >
+                           <option value="diplomat" className="bg-gaming-card">Diplomata</option>
+                           <option value="military_leader" className="bg-gaming-card">Líder Militar</option>
+                           <option value="recruiter" className="bg-gaming-card">Recrutador</option>
+                           <option value="muse" className="bg-gaming-card">Musa</option>
+                           <option value="warrior" className="bg-gaming-card">Guerreiro</option>
+                         </select>
+
+                          <button 
+                             disabled={deletingId === m.id}
+                             onClick={() => handleDeleteMember(m.id, m.name, true)}
+                             className="p-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                             title="Remover Membro"
+                           >
+                              <Trash2 size={16} />
+                           </button>
+                        </div>
                      </motion.div>
-                 ))}
+                  ))}
                  </AnimatePresence>
                  {members.length <= 1 && (
                    <div className="py-24 text-center flex flex-col items-center gap-4 opacity-20">

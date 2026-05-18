@@ -5,11 +5,19 @@ import { useClan } from '../context/ClanContext';
 
 export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const [activeSubTab, setActiveSubTab] = useState('membros');
-  const { members, loading, logout, myMember, deleteMember, updateMemberRole } = useClan();
+  const { members, loading, logout, myMember, deleteMember, updateMemberRole, isEcoMode } = useClan();
+  
+  const sortedMembers = [...members].sort((a, b) => {
+    if (b.level !== a.level) {
+      return (b.level || 0) - (a.level || 0);
+    }
+    return (b.heroPower || 0) - (a.heroPower || 0);
+  });
+
   const [editingMember, setEditingMember] = useState<string | null>(null);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const isLeader = myMember?.role === 'leader' || myMember?.role === 'co-leader';
+  const isLeader = myMember?.role === 'leader';
 
   const handleDeleteMember = async (memberId: string, name: string) => {
     if (confirm(`Deseja realmente ELIMINAR ${name} da Ordem Suprema? Esta ação removerá o acesso do usuário.`)) {
@@ -25,14 +33,15 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   };
 
   const handlePromotion = (memberId: string, currentRole: string) => {
-    const roles: ('member' | 'elder' | 'co-leader' | 'leader')[] = ['member', 'elder', 'co-leader', 'leader'];
+    const roles: ('warrior' | 'muse' | 'recruiter' | 'military_leader' | 'diplomat' | 'leader')[] = 
+      ['warrior', 'muse', 'recruiter', 'military_leader', 'diplomat', 'leader'];
     const currentIndex = roles.indexOf(currentRole as any);
     const nextRole = roles[(currentIndex + 1) % roles.length];
     
     if (nextRole === 'leader') {
       if (confirm('Deseja transferir a Liderança? Você perderá seus privilégios de Líder.')) {
         updateMemberRole(memberId, 'leader');
-        updateMemberRole(myMember!.id, 'co-leader');
+        updateMemberRole(myMember!.id, 'diplomat');
       }
     } else {
       updateMemberRole(memberId, nextRole);
@@ -65,9 +74,11 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'leader': return 'text-gaming-gold';
-      case 'co-leader': return 'text-orange-500';
-      case 'elder': return 'text-gaming-purple';
-      case 'member': return 'text-blue-400';
+      case 'diplomat': return 'text-gaming-purple';
+      case 'military_leader': return 'text-red-500';
+      case 'recruiter': return 'text-green-500';
+      case 'muse': return 'text-pink-400';
+      case 'warrior': return 'text-blue-400';
       default: return 'text-white/60';
     }
   };
@@ -75,9 +86,11 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'leader': return '💀';
-      case 'co-leader': return '🔥';
-      case 'elder': return '🛡️';
-      case 'member': return '⚔️';
+      case 'diplomat': return '📜';
+      case 'military_leader': return '⚔️';
+      case 'recruiter': return '📢';
+      case 'muse': return '✨';
+      case 'warrior': return '🛡️';
       default: return '🔰';
     }
   };
@@ -85,10 +98,29 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'leader': return 'Líder';
-      case 'co-leader': return 'Braço Direito';
-      case 'elder': return 'Veterano';
-      case 'member': return 'Guerreiro';
+      case 'diplomat': return 'Diplomata';
+      case 'military_leader': return 'Líder Militar';
+      case 'recruiter': return 'Recrutador';
+      case 'muse': return 'Musa';
+      case 'warrior': return 'Guerreiro';
       default: return role;
+    }
+  };
+
+  const getBorderClasses = (borderId?: string) => {
+    if (isEcoMode) {
+      switch (borderId) {
+        case 'border_cyan': return 'border border-cyan-400';
+        case 'border_purple': return 'border border-purple-500';
+        case 'border_gold': return 'border border-gaming-gold';
+        default: return 'border border-white/10';
+      }
+    }
+    switch (borderId) {
+      case 'border_cyan': return 'border border-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]';
+      case 'border_purple': return 'border border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]';
+      case 'border_gold': return 'border border-gaming-gold shadow-[0_0_12px_rgba(251,191,36,0.5)] animate-pulse';
+      default: return 'border border-white/10';
     }
   };
 
@@ -111,9 +143,10 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
               <thead>
                 <tr className="border-b border-gaming-border bg-white/[0.02]">
                   <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest">#</th>
-                  <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest">Nome do Jogador</th>
-                  <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest text-center">Rank</th>
-                  <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest">Membro Desde</th>
+                  <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest">Guerreiro</th>
+                  <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest text-center">Poder</th>
+                  <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest text-center">Patente</th>
+                  <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest">Desde</th>
                   <th className="px-6 py-4 text-[9px] uppercase text-white/20 font-bold tracking-widest">Status</th>
                 </tr>
               </thead>
@@ -125,7 +158,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                         <td colSpan={5} className="px-6 py-4 h-16 bg-white/5" />
                       </tr>
                     ))
-                  ) : members.length === 0 ? (
+                  ) : sortedMembers.length === 0 ? (
                     <motion.tr 
                       key="empty"
                       initial={{ opacity: 0 }}
@@ -136,7 +169,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                         Nenhum membro encontrado
                       </td>
                     </motion.tr>
-                  ) : members.map((m, index) => (
+                  ) : sortedMembers.map((m, index) => (
                     <motion.tr 
                       key={m.id} 
                       layout
@@ -152,11 +185,20 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {m.avatarUrl && (
-                          <img src={m.avatarUrl} alt={m.name} className="w-6 h-6 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
-                        )}
+                        <div className="relative group/avatar">
+                          {m.avatarUrl && (
+                            <img src={m.avatarUrl} alt={m.name} className={`w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} referrerPolicy="no-referrer" />
+                          )}
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-gaming-gold rounded-full flex items-center justify-center border border-black shadow-[0_0_10px_rgba(251,191,36,0.8)] z-10">
+                            <span className="text-[7px] font-black text-black leading-none">{m.level || 0}</span>
+                          </div>
+                          {!isEcoMode && <div className="absolute inset-0 rounded-full bg-gaming-gold/20 blur-md opacity-0 group-hover/avatar:opacity-100 transition-opacity" />}
+                        </div>
                         <span className="text-xs font-bold text-white group-hover:text-gaming-gold transition-colors">{m.name}</span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-sm font-mono font-black text-red-500 italic">{(m.heroPower || 0).toLocaleString()}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center gap-1">
@@ -189,7 +231,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                   Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="h-20 bg-white/5 rounded-xl animate-pulse" />
                   ))
-                ) : members.map((m, index) => (
+                ) : sortedMembers.map((m, index) => (
                   <motion.div 
                     key={m.id} 
                     layout
@@ -199,17 +241,22 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                     className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4"
                   >
                   <div className="flex items-center gap-4">
-                    <div className="relative">
+                    <div className="relative group/avatar">
                       {m.avatarUrl ? (
-                        <img src={m.avatarUrl} alt={m.name} className="w-10 h-10 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                        <img src={m.avatarUrl} alt={m.name} className={`w-10 h-10 rounded-full object-cover shadow-[0_0_15px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-[10px] font-black uppercase text-white/30">{m.name.substring(0,2)}</div>
+                        <div className={`w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-[10px] font-black uppercase text-white/30 ${getBorderClasses(m.profileBorder)}`}>{m.name.substring(0,2)}</div>
                       )}
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-gaming-card ${m.status === 'online' ? 'bg-green-500' : 'bg-white/20'}`} />
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-gaming-gold rounded-full flex items-center justify-center border-2 border-gaming-bg shadow-[0_0_15px_rgba(251,191,36,0.6)] z-10 transition-transform group-hover/avatar:scale-110">
+                        <span className="text-[10px] font-black text-black leading-none">{m.level || 0}</span>
+                      </div>
+                      <div className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-gaming-card ${m.status === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-white/20'}`} />
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-white leading-tight">{m.name}</span>
-                      <span className={`text-[8px] font-bold uppercase tracking-widest ${getRoleBadgeColor(m.role)}`}>{getRoleLabel(m.role)}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${getRoleBadgeColor(m.role)}`}>{getRoleLabel(m.role)}</span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">

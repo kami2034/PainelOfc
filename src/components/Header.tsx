@@ -5,7 +5,8 @@ import React, { useState } from 'react';
 
 export function Header({ isMobile = false }: { isMobile?: boolean }) {
   const { myMember, claimDailyBonus, redeemPromoCode, isEcoMode } = useClan();
-  const [activeModal, setActiveModal] = useState<'bonus' | 'promo' | 'boxes' | null>(null);
+  const [activeModal, setActiveModal] = useState<'bonus' | 'promo' | 'boxes' | 'diamonds' | 'coins' | null>(null);
+
   const [promoCode, setPromoCode] = useState('');
   const [promoMessage, setPromoMessage] = useState<{ success: boolean, text: string } | null>(null);
 
@@ -93,7 +94,7 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
 
         <motion.button 
           whileHover={{ scale: 1.05 }}
-          onClick={() => window.alert(`Você possui ${myMember?.diamonds || 0} Diamantes. Use-os no Inventário para adquirir o Passe Premium!`)}
+          onClick={() => setActiveModal('diamonds')}
           className="flex items-center gap-1.5 px-2 py-1.5 bg-gaming-gold/10 border border-gaming-gold/30 rounded-xl shrink-0 shadow-[0_0_10px_rgba(251,191,36,0.1)] h-8"
         >
           <Gem size={14} className="text-gaming-gold" />
@@ -102,7 +103,7 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
 
         <motion.button 
           whileHover={{ scale: 1.05 }}
-          onClick={() => window.alert(`Você possui ${myMember?.coins || 0} Moedas. Acumule moedas através do bônus diário!`)}
+          onClick={() => setActiveModal('coins')}
           className="flex items-center gap-1.5 px-2 py-1.5 bg-green-500/10 border border-green-500/30 rounded-xl shrink-0 shadow-[0_0_10px_rgba(34,197,94,0.1)] h-8"
         >
           <Coins size={14} className="text-green-500" />
@@ -234,6 +235,68 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
                     </button>
                     
                     <p className="mt-4 text-[8px] text-white/20 uppercase font-bold tracking-widest">Adquira mais baús na loja em breve.</p>
+                  </>
+                )}
+
+                {activeModal === 'diamonds' && (
+                  <>
+                    <div className="w-20 h-20 bg-gaming-gold/10 border border-gaming-gold/20 rounded-2xl flex items-center justify-center mb-6">
+                      <Gem size={40} className="text-gaming-gold animate-pulse" />
+                    </div>
+                    <h2 className="text-2xl font-display font-black uppercase tracking-tight mb-2">Seus Diamantes</h2>
+                    <p className="text-white/40 text-[10px] uppercase font-bold tracking-[0.2em] mb-8">O recurso mais valioso da sua jornada.</p>
+                    
+                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 flex flex-col items-center gap-4">
+                      <div className="flex flex-col items-center">
+                        <span className="text-[10px] text-gaming-gold font-black uppercase tracking-[0.3em] mb-1">Saldo Atual</span>
+                        <div className="flex items-center gap-3">
+                          <Gem size={32} className="text-gaming-gold" />
+                          <span className="text-4xl font-mono font-black text-white">{myMember?.diamonds || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-left w-full space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 rounded-full bg-gaming-gold mt-1 shrink-0" />
+                        <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Use diamantes para adquirir o Passe Premium e desbloquear recompensas exclusivas.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 rounded-full bg-gaming-gold mt-1 shrink-0" />
+                        <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Troque diamantes por itens raros no Mercado Negro (em breve).</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {activeModal === 'coins' && (
+                  <>
+                    <div className="w-20 h-20 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center justify-center mb-6">
+                      <Coins size={40} className="text-green-500 animate-spin-slow" />
+                    </div>
+                    <h2 className="text-2xl font-display font-black uppercase tracking-tight mb-2">Suas Moedas</h2>
+                    <p className="text-white/40 text-[10px] uppercase font-bold tracking-[0.2em] mb-8">Acumule riquezas através do bônus diário.</p>
+                    
+                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 flex flex-col items-center gap-4">
+                      <div className="flex flex-col items-center">
+                        <span className="text-green-500 font-black text-[10px] uppercase tracking-[0.3em] mb-1">Tesouro Acumulado</span>
+                        <div className="flex items-center gap-3">
+                          <Coins size={32} className="text-green-500" />
+                          <span className="text-4xl font-mono font-black text-white">{myMember?.coins || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-left w-full space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shrink-0" />
+                        <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Use moedas para adquirir novas Auras Animadas e Bordas de Herói clicando no seu Perfil.</p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shrink-0" />
+                        <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Novas skins e itens de personalização estão sendo forjados para moedas.</p>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>

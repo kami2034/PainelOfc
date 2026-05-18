@@ -76,9 +76,11 @@ export function ClanProfile({
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'leader': return 'Líder';
-      case 'co-leader': return 'Braço Direito';
-      case 'elder': return 'Veterano';
-      case 'member': return 'Guerreiro';
+      case 'diplomat': return 'Diplomata';
+      case 'military_leader': return 'Líder Militar';
+      case 'recruiter': return 'Recrutador';
+      case 'muse': return 'Musa';
+      case 'warrior': return 'Guerreiro';
       default: return role;
     }
   };
@@ -93,26 +95,38 @@ export function ClanProfile({
   const xpProgress = currentLevel >= 10 ? 100 : ((currentXp - curLevelXp) / (nextLevelXp - curLevelXp)) * 100;
   const trophyProgress = ((myMember?.trophies || 0) / 100) * 100;
 
-  const tabs = [
-    { id: 'guia', label: 'Guia e Dicas 📚' }
-  ];
+  const getBorderClasses = (borderId?: string) => {
+    switch (borderId) {
+      case 'border_cyan': return 'border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]';
+      case 'border_purple': return 'border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]';
+      case 'border_gold': return 'border-2 border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.6)] animate-pulse';
+      default: return 'border-2 border-gaming-gold/30';
+    }
+  };
 
   return (
     <section className="relative w-full rounded-2xl overflow-hidden bg-gaming-card border border-gaming-border mb-4 md:mb-6 transition-all duration-500">
-      {/* Quick Guide Callout (Mobile) */}
-      {isMobile && (
-        <div 
-          onClick={() => setActiveTab('guia')}
-          className="bg-gaming-gold text-black p-3 flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest animate-pulse cursor-pointer relative z-20"
-        >
-          <BookOpen size={14} /> Guia de Sobrevivência: Comece Aqui! 📚
+      {/* New Feature Notification */}
+      <div 
+        onClick={() => setActiveTab('guia')}
+        className="bg-linear-to-r from-gaming-gold/20 via-gaming-gold/5 to-transparent border-b border-gaming-gold/20 px-4 md:px-8 py-2.5 flex items-center justify-between group cursor-pointer hover:bg-gaming-gold/30 transition-all font-display"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gaming-gold flex items-center justify-center text-black shadow-[0_0_15px_rgba(251,191,36,0.5)] animate-bounce">
+            <BookOpen size={16} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gaming-gold">Dica Estratégica!</span>
+            <span className="text-[9px] md:text-[11px] font-bold text-white/70">O novo menu de <span className="text-white italic">Guias & Dicas</span> já está disponível no menu lateral 📚</span>
+          </div>
         </div>
-      )}
+        <ChevronRight size={16} className="text-gaming-gold group-hover:translate-x-1 transition-transform" />
+      </div>
       
       {/* Background Image/Art */}
       <div className="absolute inset-0 opacity-20 md:opacity-40 mix-blend-overlay">
         <img 
-          src="/src/assets/images/clan_bg_art_1778972376934.png" 
+          src={myMember?.profileBg || "/src/assets/images/clan_bg_art_1778972376934.png"} 
           alt="Art" 
           className="w-full h-full object-cover"
         />
@@ -123,18 +137,18 @@ export function ClanProfile({
         {/* Left: Avatar & Info */}
         <div className={`flex ${isMobile ? 'flex-col items-center text-center' : 'flex-row items-center'} gap-5 md:gap-8 flex-1`}>
           <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-            {!isEcoMode && <div className="absolute -inset-1 bg-gaming-gold/50 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>}
-            <div className={`relative ${isMobile ? 'w-24 h-24' : 'w-32 h-32 md:w-40 md:h-40'} hex-clip bg-gaming-border p-0.5 group-hover:scale-105 transition-transform duration-500`}>
+            {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-25 group-hover:opacity-75 transition duration-1000 ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold' : 'bg-gaming-gold/50'}`}></div>}
+            <div className={`relative ${isMobile ? 'w-24 h-24' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
               {myMember?.avatarUrl ? (
                 <img 
                   src={myMember.avatarUrl} 
                   alt="Avatar" 
-                  className="w-full h-full object-cover hex-clip"
+                  className="w-full h-full object-cover rounded-full"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="w-full h-full bg-linear-to-br from-gaming-gold to-gaming-purple/40 flex items-center justify-center text-center p-2 md:p-4">
-                  <span className="text-[8px] md:text-[10px] font-display font-black uppercase text-black leading-tight">Altere seu perfil</span>
+                <div className="w-full h-full bg-linear-to-br from-gaming-gold to-gaming-purple/40 flex items-center justify-center text-center p-2 md:p-4 rounded-full">
+                  <span className="text-[8px] md:text-[10px] font-display font-black uppercase text-black leading-tight">Mudar Foto</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -207,7 +221,7 @@ export function ClanProfile({
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 hover:bg-white/10 transition-all group overflow-hidden relative">
                    <div className="relative z-10 flex flex-col">
                       <span className="text-[7px] uppercase font-black text-white/30 tracking-widest">Sua Patente</span>
-                      <span className={`text-[10px] font-black uppercase italic tracking-tighter ${myMember?.role === 'leader' ? 'text-gaming-gold' : 'text-blue-400'}`}>{getRoleLabel(myMember?.role || 'member')}</span>
+                      <span className={`text-[10px] font-black uppercase italic tracking-tighter ${myMember?.role === 'leader' ? 'text-gaming-gold' : 'text-blue-400'}`}>{getRoleLabel(myMember?.role || 'warrior')}</span>
                    </div>
                    <Shield size={32} className="absolute -right-2 -bottom-2 text-white/5 group-hover:scale-110 transition-transform" />
                 </div>
@@ -218,16 +232,7 @@ export function ClanProfile({
                    </div>
                    <Circle size={24} className="absolute -right-2 -bottom-2 text-green-500/10 fill-current group-hover:scale-110 transition-transform" />
                 </div>
-                <div 
-                  onClick={() => setActiveTab('guia')}
-                  className="col-span-2 bg-gaming-gold text-black rounded-xl p-3 flex items-center justify-between group overflow-hidden relative shadow-lg cursor-pointer hover:bg-white transition-all"
-                >
-                   <div className="relative z-10">
-                      <span className="text-[7px] uppercase font-black text-black/60 tracking-widest block">Manual de Guerra</span>
-                      <span className="text-xs font-black uppercase italic tracking-tighter">Guia & Dicas 📚</span>
-                   </div>
-                   <BookOpen size={32} className="text-black/10 absolute -right-1 -bottom-1 rotate-12 group-hover:scale-110 transition-transform" />
-                </div>
+
                 <div className="col-span-2 bg-linear-to-r from-gaming-gold/10 to-transparent border border-gaming-gold/20 rounded-xl p-3 flex items-center justify-between group overflow-hidden relative shadow-lg">
                    <div className="relative z-10">
                       <span className="text-[7px] uppercase font-black text-gaming-gold/60 tracking-widest block">Mestre da Aliança</span>
@@ -238,22 +243,6 @@ export function ClanProfile({
              </div>
           </div>
         </div>
-
-      {/* Tabs */}
-      <div className={`border-t border-gaming-border px-4 md:px-8 py-3 flex gap-4 md:gap-8 overflow-x-auto no-scrollbar`}>
-        {tabs.map((tab) => (
-          <button 
-            key={tab.id} 
-            onClick={() => setActiveTab(tab.id)}
-            className={`text-[10px] font-bold uppercase tracking-widest transition-all relative py-1 shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-          >
-            {tab.label}
-            {activeTab === tab.id && (
-              <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-gaming-gold" />
-            )}
-          </button>
-        ))}
-      </div>
     </section>
   );
 }

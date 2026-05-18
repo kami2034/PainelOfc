@@ -8,7 +8,9 @@ interface Member {
   id: string;
   userId: string;
   name: string;
-  role: 'leader' | 'co-leader' | 'elder' | 'member';
+  role: 'leader' | 'diplomat' | 'military_leader' | 'recruiter' | 'muse' | 'warrior';
+  reportedAt?: string; 
+  reportedBy?: string;
   trophies: number;
   donations: number;
   heroPower: number;
@@ -28,6 +30,15 @@ interface Member {
   appTheme?: 'dark' | 'neon' | 'gold' | 'classic';
   chatTheme?: 'dark' | 'neon' | 'gold' | 'classic';
   lastCelebratedLevel?: number;
+  profileBg?: string;
+  profileBorder?: string;
+}
+
+interface TheftReport {
+  id: string;
+  reporterId: string;
+  reporterName: string;
+  timestamp: string;
 }
 
 interface Clan {
@@ -63,6 +74,11 @@ interface ClanContextType {
   isEcoMode: boolean;
   toggleEcoMode: () => Promise<void>;
   isOptimizing: boolean;
+  reportTheft: () => Promise<void>;
+  theftReports: TheftReport[];
+  clearTheftReport: (reportId: string) => Promise<void>;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
 }
 
 const ClanContext = createContext<ClanContextType | undefined>(undefined);
@@ -77,6 +93,8 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved === 'true';
   });
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [theftReports, setTheftReports] = useState<TheftReport[]>([]);
+  const [activeTab, setActiveTab] = useState('inicio');
   
   const toggleEcoMode = async () => {
     setIsOptimizing(true);
@@ -151,6 +169,22 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [myMember?.userId, clan?.id]);
 
+  // Update specific user roles as requested: Miyake, guerreiro lobo, Riccelli
+  useEffect(() => {
+    if (members.length > 0) {
+      members.forEach(m => {
+        // Miyake and Guerreiro Lobo -> warrior
+        if ((m.name === 'Miyake' || m.name === 'guerreiro lobo') && m.role !== 'warrior') {
+          updateMemberRole(m.id, 'warrior');
+        }
+        // Riccelli -> diplomat
+        if (m.name === 'Riccelli' && m.role !== 'diplomat') {
+          updateMemberRole(m.id, 'diplomat');
+        }
+      });
+    }
+  }, [members.length]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -197,14 +231,25 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    // 3. Listen to Theft Reports (Leaders only)
+    let unsubscribeReports = () => {};
+    if (myMember?.role === 'leader') {
+      const reportsRef = collection(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports');
+      const reportsQuery = query(reportsRef, orderBy('timestamp', 'desc'));
+      unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TheftReport[];
+        setTheftReports(data);
+      });
+    }
+
     return () => {
       unsubscribeClan();
       unsubscribeMembers();
+      unsubscribeReports();
     };
-  }, [user]);
+  }, [user, myMember?.role]);
 
-  const isAdmin = members.find(m => m.userId === user?.uid)?.role === 'leader' || 
-                  members.find(m => m.userId === user?.uid)?.role === 'co-leader';
+  const isAdmin = members.find(m => m.userId === user?.uid)?.role === 'leader';
 
   const logout = async () => {
     try {
@@ -266,7 +311,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const deleteMember = async (memberId: string) => {
-    if (!user || !myMember || (myMember.role !== 'leader' && myMember.role !== 'co-leader')) return;
+    if (!user || !myMember || myMember.role !== 'leader') return;
     const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
     try {
       await deleteDoc(memberRef);
@@ -277,7 +322,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const banMember = async (memberId: string) => {
-    if (!user || !myMember || (myMember.role !== 'leader' && myMember.role !== 'co-leader')) return;
+    if (!user || !myMember || myMember.role !== 'leader') return;
     
     const banRef = doc(db, 'bans', memberId);
     const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
@@ -299,10 +344,18 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateMemberRole = async (memberId: string, role: string) => {
-    if (!user || !myMember || myMember.role !== 'leader') return;
+    if (!user || !myMember) {
+      console.warn('UpdateMemberRole aborted: No user or member data');
+      return;
+    }
+    if (myMember.role !== 'leader') {
+      console.warn(`UpdateMemberRole aborted: User is not leader (Role: ${myMember.role})`);
+      return;
+    }
     const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
     try {
       await updateDoc(memberRef, { role });
+      console.log(`Successfully updated role of ${memberId} to ${role}`);
     } catch (err) {
       console.error('Failed to update member role', err);
     }
@@ -371,13 +424,30 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: false, message: 'Código inválido' };
   };
 
+  const reportTheft = async () => {
+    if (!user || !myMember) return;
+    const reportRef = doc(collection(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports'));
+    await setDoc(reportRef, {
+      reporterId: user.uid,
+      reporterName: myMember.name || 'Guerreiro anônimo',
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  const clearTheftReport = async (reportId: string) => {
+    const reportRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports', reportId);
+    await deleteDoc(reportRef);
+  };
+
   return (
     <ClanContext.Provider value={{ 
       user, clan, members, myMember, loading, isAdmin, logout, 
       updateMemberData, claimDailyBonus, redeemPromoCode, 
       completeMission, markVisitedMissions, deleteMember, banMember, updateMemberRole,
       updateClanGuideImage, updatePresenceStatus,
-      isEcoMode, toggleEcoMode, isOptimizing
+      isEcoMode, toggleEcoMode, isOptimizing,
+      reportTheft, theftReports, clearTheftReport,
+      activeTab, setActiveTab
     }}>
       {children}
     </ClanContext.Provider>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { InitialNotice } from './components/InitialNotice';
 import { ClanProfile } from './components/ClanProfile';
 import { BaseStats, DetailedStats } from './components/Stats';
 import { MemberList } from './components/MemberList';
@@ -16,7 +17,6 @@ import { doc, getDoc } from 'firebase/firestore';
 
 import { 
   CombateView, 
-  InventarioView, 
   MapaView, 
   PerfilView, 
   ConfiguracoesView, 
@@ -29,8 +29,7 @@ import { MissoesView } from './components/MissoesView';
 
 export default function App() {
   const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout } = useClan();
-  const [activeTab, setActiveTab ] = useState('inicio');
+  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab } = useClan();
   const [initializing, setInitializing] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   
@@ -113,8 +112,6 @@ export default function App() {
         );
       case 'combate':
         return <CombateView />;
-      case 'inventario':
-        return <InventarioView />;
       case 'mapa':
         return <MapaView />;
       case 'perfil':
@@ -322,6 +319,7 @@ export default function App() {
       
       <main className={`flex-1 flex flex-col gaming-gradient min-h-screen transition-all duration-500 ${!isMobile ? 'ml-16' : 'pb-20'}`}>
         <Header isMobile={isMobile} />
+        <InitialNotice onExplore={() => setActiveTab('guia')} />
         
         <div className={`flex-1 flex flex-col gap-6 ${isMobile ? 'px-4' : 'px-8 pb-8'}`}>
           <AnimatePresence mode="wait">
