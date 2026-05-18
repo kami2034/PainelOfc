@@ -10,6 +10,13 @@
   --color-gaming-bg: #0d0118;
   --color-gaming-card: #1a0b2e;
   --color-gaming-border: rgba(251, 191, 36, 0.1);
+
+  --animate-bounce-subtle: bounce-subtle 3s ease-in-out infinite;
+
+  @keyframes bounce-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
 }
 
 [data-theme="neon"] {
@@ -64,8 +71,17 @@
   box-shadow: none !important;
   text-shadow: none !important;
   animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
+  animation-iteration-count: 0 !important;
   transition-duration: 0.1s !important;
+  will-change: auto !important;
+  image-rendering: auto !important;
+}
+
+.eco-mode .animate-pulse,
+.eco-mode .animate-ping,
+.eco-mode .animate-bounce,
+.eco-mode .animate-spin {
+  animation: none !important;
 }
 
 .eco-mode .gaming-gradient {

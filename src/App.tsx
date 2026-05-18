@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { InitialNotice } from './components/InitialNotice';
+import { UpdateRewardNotice } from './components/UpdateRewardNotice';
 import { ClanProfile } from './components/ClanProfile';
 import { BaseStats, DetailedStats } from './components/Stats';
 import { MemberList } from './components/MemberList';
@@ -29,7 +30,7 @@ import { MissoesView } from './components/MissoesView';
 
 export default function App() {
   const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab } = useClan();
+  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, setActiveSubTab } = useClan();
   const [initializing, setInitializing] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   
@@ -87,6 +88,33 @@ export default function App() {
             exit={!isEcoMode ? { opacity: 0, scale: 0.98 } : { opacity: 1 }}
             className={`flex flex-col gap-4 md:gap-6 flex-1`}
           >
+            {/* Banner Urgente de Guerra (Topo) */}
+            <motion.div 
+              initial={isEcoMode ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative overflow-hidden group cursor-pointer"
+              onClick={() => {
+                setActiveTab('guia');
+                setActiveSubTab('avisos');
+              }}
+            >
+              {!isEcoMode && <div className="absolute inset-0 bg-red-600/5 animate-pulse" />}
+              <div className={`relative border border-red-500/20 bg-red-950/20 ${isEcoMode ? '' : 'backdrop-blur-md'} px-4 py-2 rounded-xl flex items-center justify-between gap-4`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full bg-red-500 ${isEcoMode ? '' : 'animate-ping'}`} />
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-red-500 italic">
+                    Prioridade Máxima: Convocação para Guerra de Servidores
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline text-[9px] uppercase font-bold text-white/40 group-hover:text-white transition-colors">
+                    Ver Estratégias
+                  </span>
+                  <ShieldAlert className="text-red-500" size={14} />
+                </div>
+              </div>
+            </motion.div>
+
             {/* Top Section - Clan Info (Always visible on Inicio) */}
             <div className={isMobile ? 'w-full' : 'col-span-12'}>
               <ClanProfile 
@@ -148,12 +176,9 @@ export default function App() {
     if (!loading && user) {
       if (isMember) {
         setWasMember(true);
-      } else if (wasMember === true) {
-        // Was a member, but now is not. Likely expelled or left.
-        logout();
       }
     }
-  }, [isMember, wasMember, user, loading, logout]);
+  }, [isMember, user, loading]);
 
   useEffect(() => {
     if (user) {
@@ -235,7 +260,7 @@ export default function App() {
   }
 
   if (!clan) {
-    const isLeader = user.email === 'ryankevyn3000@gmail.com';
+    const isLeader = user.email === 'ryankevyn3000@gmail.com' || user.email === 'ryankevyn2020@gmail.com';
     
     return (
       <div className="min-h-screen bg-gaming-bg flex flex-col items-center justify-center p-6 text-center">
@@ -317,9 +342,13 @@ export default function App() {
 
       <Sidebar isMobile={isMobile} activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <main className={`flex-1 flex flex-col gaming-gradient min-h-screen transition-all duration-500 ${!isMobile ? 'ml-16' : 'pb-20'}`}>
+      <main className={`flex-1 flex flex-col ${isEcoMode ? 'bg-gaming-bg' : 'gaming-gradient'} min-h-screen transition-all duration-300 ${!isMobile ? 'ml-16' : 'pb-20'}`}>
         <Header isMobile={isMobile} />
-        <InitialNotice onExplore={() => setActiveTab('guia')} />
+        <InitialNotice onExplore={() => {
+          setActiveTab('guia');
+          setActiveSubTab('avisos');
+        }} />
+        <UpdateRewardNotice />
         
         <div className={`flex-1 flex flex-col gap-6 ${isMobile ? 'px-4' : 'px-8 pb-8'}`}>
           <AnimatePresence mode="wait">
