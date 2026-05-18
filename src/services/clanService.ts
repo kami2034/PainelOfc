@@ -19,7 +19,7 @@ export const createInitialClan = async (userId: string, userEmail: string | null
 
 export const joinClan = async (userId: string, userName: string, userEmail: string | null) => {
   const clanId = 'main-clan';
-  const isLeader = userEmail === 'ryankevyn3000@gmail.com';
+  const isLeader = userEmail === 'ryankevyn3000@gmail.com' || userEmail === 'ryankevyn2020@gmail.com';
   const clanRef = doc(db, 'clans', clanId);
   
   if (isLeader) {
