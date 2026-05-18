@@ -30,6 +30,7 @@ interface Member {
   appTheme?: 'dark' | 'neon' | 'gold' | 'classic';
   chatTheme?: 'dark' | 'neon' | 'gold' | 'classic';
   lastCelebratedLevel?: number;
+  updateRewardClaimed?: boolean;
   profileBg?: string;
   profileBorder?: string;
 }
@@ -51,6 +52,7 @@ interface Clan {
   capacity: number;
   ownerId: string;
   trophyCount: number;
+  logoUrl?: string;
 }
 
 interface ClanContextType {
@@ -70,15 +72,19 @@ interface ClanContextType {
   banMember: (memberId: string) => Promise<void>;
   updateMemberRole: (memberId: string, role: string) => Promise<void>;
   updateClanGuideImage: (imageUrl: string) => Promise<void>;
+  updateClanLogo: (imageUrl: string) => Promise<void>;
   updatePresenceStatus: (status: 'online' | 'away' | 'offline') => Promise<void>;
   isEcoMode: boolean;
   toggleEcoMode: () => Promise<void>;
   isOptimizing: boolean;
   reportTheft: () => Promise<void>;
+  claimUpdateReward: () => Promise<void>;
   theftReports: TheftReport[];
   clearTheftReport: (reportId: string) => Promise<void>;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  activeSubTab: string;
+  setActiveSubTab: (subTab: string) => void;
 }
 
 const ClanContext = createContext<ClanContextType | undefined>(undefined);
@@ -95,16 +101,16 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [theftReports, setTheftReports] = useState<TheftReport[]>([]);
   const [activeTab, setActiveTab] = useState('inicio');
+  const [activeSubTab, setActiveSubTab] = useState('guias');
   
   const toggleEcoMode = async () => {
     setIsOptimizing(true);
-    // Artificial delay for optimization process
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Reduced artificial delay for optimization process to feel faster
+    await new Promise(resolve => setTimeout(resolve, 800));
     
     const newValue = !isEcoMode;
     setIsEcoMode(newValue);
     localStorage.setItem('isEcoMode', String(newValue));
-    setIsOptimizing(null as any); // Reset state
     setIsOptimizing(false);
   };
   
@@ -117,6 +123,9 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Handle redirect result
     getRedirectResult(auth).catch((error) => {
       console.error('Error during redirect login:', error);
+      if (error.code === 'auth/unauthorized-domain') {
+        alert('Este domínio não está autorizado no Firebase. Por favor, adicione os domínios .run.app nas configurações do Firebase Authentication.');
+      }
     });
 
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -125,6 +134,9 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setClan(null);
         setMembers([]);
         setLoading(false);
+      } else {
+        // When user is found, we keep loading as true until snapshots return or fail
+        setLoading(true);
       }
     });
 
@@ -133,7 +145,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update specific user name and role to Skadir/Leader if needed
   useEffect(() => {
-    if (user?.email === 'ryankevyn3000@gmail.com' && members.length > 0) {
+    if ((user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2020@gmail.com') && members.length > 0) {
       const myMember = members.find(m => m.userId === user.uid);
       if (myMember && (myMember.name !== 'Skadir' || myMember.role !== 'leader')) {
         const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
@@ -186,30 +198,31 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [members.length]);
 
   useEffect(() => {
-    if (!user) return;
-
     setLoading(true);
 
-    // 1. Listen to Clan Data
+    // 1. Listen to Clan Data (Available even without login)
     const clanDocRef = doc(db, 'clans', DEFAULT_CLAN_ID);
     const unsubscribeClan = onSnapshot(clanDocRef, (snapshot) => {
       if (snapshot.exists()) {
         setClan({ id: snapshot.id, ...snapshot.data() } as Clan);
       } else {
-        // Fallback for demo: if clan doesn't exist, we don't set it
         setClan(null);
       }
+      if (!user) setLoading(false);
     }, (error) => {
-      console.error('Clan Snapshot Error:', error);
-      try {
-        handleFirestoreError(error, OperationType.GET, `clans/${DEFAULT_CLAN_ID}`);
-      } catch (e) {
-        // Log is already done
+      // Only log if user is logged in, otherwise it's expected if rules don't allow public get
+      if (user) {
+        console.error('Clan Snapshot Error:', error);
       }
       setLoading(false);
     });
 
-    // 2. Listen to Members
+    if (!user) {
+      setMembers([]);
+      return () => unsubscribeClan();
+    }
+
+    // 2. Listen to Members (Requires login)
     const membersRef = collection(db, 'clans', DEFAULT_CLAN_ID, 'members');
     const membersQuery = query(membersRef, orderBy('role', 'asc'), orderBy('trophies', 'desc'));
     
@@ -249,7 +262,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user, myMember?.role]);
 
-  const isAdmin = members.find(m => m.userId === user?.uid)?.role === 'leader';
+  const isAdmin = members.find(m => m.userId === user?.uid)?.role === 'leader' || user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2020@gmail.com';
 
   const logout = async () => {
     try {
@@ -311,10 +324,22 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const deleteMember = async (memberId: string) => {
-    if (!user || !myMember || myMember.role !== 'leader') return;
+    if (!user || !myMember) return;
+    
+    // Permission: Only leader can delete others, but anyone can delete themselves
+    if (myMember.role !== 'leader' && myMember.userId !== memberId) {
+      console.warn('Unauthorized: You can only delete your own account unless you are a leader.');
+      return;
+    }
+
     const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
     try {
       await deleteDoc(memberRef);
+      
+      // If deleting own account, log out immediately
+      if (myMember.userId === memberId || user.uid === memberId) {
+        await logout();
+      }
     } catch (err) {
       console.error('Failed to delete member', err);
       throw err;
@@ -362,12 +387,24 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateClanGuideImage = async (imageUrl: string) => {
-    if (!user || !myMember || myMember.role !== 'leader') return;
+    const isActuallyLeader = user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com' || myMember?.role === 'leader';
+    if (!user || !myMember || !isActuallyLeader) return;
     const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
     try {
       await updateDoc(clanRef, { guideImagePost1: imageUrl });
     } catch (err) {
       console.error('Failed to update guide image', err);
+    }
+  };
+
+  const updateClanLogo = async (imageUrl: string) => {
+    const isActuallyLeader = user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com' || myMember?.role === 'leader';
+    if (!user || !myMember || !isActuallyLeader) return;
+    const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
+    try {
+      await updateDoc(clanRef, { logoUrl: imageUrl });
+    } catch (err) {
+      console.error('Failed to update clan logo', err);
     }
   };
 
@@ -434,6 +471,15 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const claimUpdateReward = async () => {
+    if (!user || !myMember || myMember.updateRewardClaimed) return;
+    
+    await updateMemberData({
+      coins: (myMember.coins || 0) + 50,
+      updateRewardClaimed: true
+    });
+  };
+
   const clearTheftReport = async (reportId: string) => {
     const reportRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports', reportId);
     await deleteDoc(reportRef);
@@ -444,10 +490,12 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, clan, members, myMember, loading, isAdmin, logout, 
       updateMemberData, claimDailyBonus, redeemPromoCode, 
       completeMission, markVisitedMissions, deleteMember, banMember, updateMemberRole,
-      updateClanGuideImage, updatePresenceStatus,
+      updateClanGuideImage, updateClanLogo, updatePresenceStatus,
       isEcoMode, toggleEcoMode, isOptimizing,
       reportTheft, theftReports, clearTheftReport,
-      activeTab, setActiveTab
+      claimUpdateReward,
+      activeTab, setActiveTab,
+      activeSubTab, setActiveSubTab
     }}>
       {children}
     </ClanContext.Provider>
