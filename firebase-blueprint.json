@@ -11,7 +11,8 @@
         "capacity": { "type": "number", "description": "Max capacity of members" },
         "ownerId": { "type": "string", "description": "UID of the clan owner" },
         "trophyCount": { "type": "number", "description": "Total trophies" },
-        "guideImagePost1": { "type": "string", "description": "Main guide image URL" }
+        "guideImagePost1": { "type": "string", "description": "Main guide image URL" },
+        "logoUrl": { "type": "string", "description": "Global clan logo URL" }
       },
       "required": ["name", "level", "ownerId"]
     },
@@ -43,7 +44,8 @@
         "lastCelebratedLevel": { "type": "number", "description": "Last level up celebrated" },
         "joinedAt": { "type": "string", "description": "ISO join date" },
         "completedMissions": { "type": "array", "items": { "type": "string" }, "description": "List of mission IDs completed" },
-        "visitedMissionsBoard": { "type": "boolean", "description": "Whether first time on missions" }
+        "visitedMissionsBoard": { "type": "boolean", "description": "Whether first time on missions" },
+        "updateRewardClaimed": { "type": "boolean", "description": "Whether user claimed the update reward" }
       },
       "required": ["userId", "name", "role", "trophies"]
     },
