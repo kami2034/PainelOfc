@@ -143,59 +143,8 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribeAuth();
   }, []);
 
-  // Update specific user name and role to Skadir/Leader if needed
-  useEffect(() => {
-    if ((user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2020@gmail.com') && members.length > 0) {
-      const myMember = members.find(m => m.userId === user.uid);
-      if (myMember && (myMember.name !== 'Skadir' || myMember.role !== 'leader')) {
-        const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
-        updateDoc(memberRef, { 
-          name: 'Skadir',
-          role: 'leader'
-        }).catch(err => console.error('Failed to update Skadir status', err));
-      }
-    }
-  }, [user, members]);
-
-  // Handle First Login Mission
-  useEffect(() => {
-    if (myMember && !myMember.completedMissions?.includes('first_login')) {
-      completeMission('first_login', 15);
-    }
-  }, [myMember?.userId]);
-
-  // One-time data reset requested by user "reset for me and for everyone"
-  useEffect(() => {
-    if (myMember && (myMember.diamonds !== 0 || myMember.trophies !== 0)) {
-       const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user!.uid);
-       updateDoc(memberRef, { 
-         diamonds: 0, 
-         trophies: 0 
-       }).catch(err => console.error('Failed to reset data', err));
-    }
-    
-    // Also reset clan trophies if user is leader
-    if (myMember?.role === 'leader' && clan && clan.trophyCount !== 0) {
-       const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
-       updateDoc(clanRef, { trophyCount: 0 }).catch(() => {});
-    }
-  }, [myMember?.userId, clan?.id]);
-
-  // Update specific user roles as requested: Miyake, guerreiro lobo, Riccelli
-  useEffect(() => {
-    if (members.length > 0) {
-      members.forEach(m => {
-        // Miyake and Guerreiro Lobo -> warrior
-        if ((m.name === 'Miyake' || m.name === 'guerreiro lobo') && m.role !== 'warrior') {
-          updateMemberRole(m.id, 'warrior');
-        }
-        // Riccelli -> diplomat
-        if (m.name === 'Riccelli' && m.role !== 'diplomat') {
-          updateMemberRole(m.id, 'diplomat');
-        }
-      });
-    }
-  }, [members.length]);
+  // Presence management removed from here as it's handled in App.tsx
+  // or should be more robust
 
   useEffect(() => {
     setLoading(true);
