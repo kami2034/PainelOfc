@@ -84,12 +84,12 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
                 </motion.div>
               </motion.div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <motion.span 
                   initial={{ opacity: 0, letterSpacing: '0.1em' }}
-                  animate={{ opacity: 1, letterSpacing: '0.5em' }}
+                  animate={{ opacity: 1, letterSpacing: '0.4em' }}
                   transition={{ delay: 0.7 }}
-                  className="text-red-500 font-black uppercase text-xs"
+                  className="text-red-500 font-black uppercase text-[10px]"
                 >
                   ESTADO DE GUERRA
                 </motion.span>
@@ -97,7 +97,7 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.8 }}
-                  className="text-4xl md:text-6xl font-display font-black uppercase italic tracking-tighter text-white"
+                  className="text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter text-white"
                 >
                   GUERRA ENTRE <span className="text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]">SERVIDORES</span>
                 </motion.h2>
@@ -107,7 +107,7 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
-                className="text-white/60 font-bold uppercase italic text-sm md:text-base leading-relaxed max-w-lg"
+                className="text-white/60 font-bold uppercase italic text-[11px] md:text-sm leading-relaxed max-w-md"
               >
                 A BATALHA PELO DOMÍNIO DO REINO COMEÇOU! OS OUTROS SERVIDORES ESTÃO AVANÇANDO. É HORA DE SE PREPARAR PARA A VITÓRIA SUPREMA.
               </motion.p>

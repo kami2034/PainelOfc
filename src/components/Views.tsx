@@ -309,120 +309,147 @@ export function GuiaView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Guide Item 1 */}
-        <div className="relative group overflow-hidden bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 flex flex-col gap-6 hover:border-blue-500/30 transition-all cursor-not-allowed">
-           <div className="absolute top-4 right-4 z-10">
-              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
-                <Lock size={10} /> Em Obras
-              </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Guide Item 1: Táticas de Batalha */}
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col gap-8 transition-all cursor-not-allowed shadow-2xl"
+        >
+           <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-blue-500/40 to-transparent" />
+           
+           <div className="absolute top-6 right-8">
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                <span className="text-[7px] font-black uppercase tracking-widest text-blue-400">Desenvolvimento</span>
+              </div>
            </div>
            
-           <div className="w-16 h-16 bg-linear-to-br from-blue-500/20 to-blue-500/5 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
-              <Sword size={32} />
+           <div className="w-20 h-20 bg-linear-to-br from-blue-600/30 to-blue-900/10 rounded-[2rem] flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all border border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-t from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Sword size={40} className="relative z-10" />
            </div>
            
            <div className="relative z-10">
-              <h4 className="font-display font-black uppercase text-2xl mb-2 italic text-white group-hover:text-blue-200 transition-colors">Táticas de Batalha ⚔️</h4>
-              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
-                Coordenando ataques de elite e táticas de cerco avançadas para dominar fortificações inimigas.
+              <h4 className="font-display font-black uppercase text-3xl mb-3 italic text-white group-hover:text-blue-300 transition-colors tracking-tighter">Táticas de <br /><span className="text-blue-500">Batalha ⚔️</span></h4>
+              <p className="text-xs text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+                Estratégias avançadas de mobilização rápida e contra-ataque cirúrgico para suprimir defesas inimigas.
               </p>
            </div>
            
-           <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center text-blue-400/50 text-[10px] font-black uppercase tracking-widest gap-2">
-                 Ver Dicas Militares <ChevronRight size={14} />
+           <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-blue-400/30 text-[9px] font-black uppercase tracking-[0.2em] gap-2">
+                 Protocolos Militares <ChevronRight size={14} />
               </div>
-              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/20">
-                <Zap size={14} />
+              <div className="w-10 h-10 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-blue-500/40 transition-colors">
+                <Zap size={18} />
               </div>
            </div>
 
-           {/* Animated development glow */}
-           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500/20">
-              <motion.div 
-                animate={{ x: ['-100%', '100%'] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="w-1/2 h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
-              />
+           {/* Stylized progress track */}
+           <div className="absolute bottom-6 left-10 right-10 flex flex-col gap-2">
+              <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: '45%' }}
+                  className="h-full bg-linear-to-r from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                />
+              </div>
            </div>
-        </div>
+        </motion.div>
 
-        {/* Guide Item 2 */}
-        <div className="relative group overflow-hidden bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 flex flex-col gap-6 hover:border-gaming-gold/30 transition-all cursor-not-allowed">
-           <div className="absolute top-4 right-4 z-10">
-              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
-                <Lock size={10} /> Em Obras
-              </span>
+        {/* Guide Item 2: Farm de Diamantes */}
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col gap-8 transition-all cursor-not-allowed shadow-2xl"
+        >
+           <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-gaming-gold/40 to-transparent" />
+
+           <div className="absolute top-6 right-8">
+              <div className="flex items-center gap-2 px-3 py-1 bg-gaming-gold/10 border border-gaming-gold/20 rounded-full">
+                <span className="w-1.5 h-1.5 bg-gaming-gold rounded-full animate-pulse" />
+                <span className="text-[7px] font-black uppercase tracking-widest text-gaming-gold">Desenvolvimento</span>
+              </div>
            </div>
 
-           <div className="w-16 h-16 bg-linear-to-br from-gaming-gold/20 to-gaming-gold/5 rounded-2xl flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:-rotate-6 transition-all border border-gaming-gold/20 shadow-[0_0_20px_rgba(251,191,36,0.1)]">
-              <Gem size={32} />
+           <div className="w-20 h-20 bg-linear-to-br from-gaming-gold/30 to-gaming-gold/10 rounded-[2rem] flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:-rotate-6 transition-all border border-gaming-gold/30 shadow-[0_0_40px_rgba(251,191,36,0.15)] relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Gem size={40} className="relative z-10" />
            </div>
 
            <div className="relative z-10">
-              <h4 className="font-display font-black uppercase text-2xl mb-2 italic text-white group-hover:text-gaming-gold transition-colors">Farm de Diamantes 💎</h4>
-              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
-                Otimização completa de recursos para garantir o máximo de diamantes em todos os eventos ativos.
+              <h4 className="font-display font-black uppercase text-3xl mb-3 italic text-white group-hover:text-gaming-gold transition-colors tracking-tighter">Farm de <br /><span className="text-gaming-gold">Diamantes 💎</span></h4>
+              <p className="text-xs text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+                Metodologias de extração máxima de recursos e otimização de rotas para acumular riqueza lendária.
               </p>
            </div>
 
-           <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center text-gaming-gold/50 text-[10px] font-black uppercase tracking-widest gap-2">
-                 Dicas de Economia <ChevronRight size={14} />
+           <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-gaming-gold/30 text-[9px] font-black uppercase tracking-[0.2em] gap-2">
+                 Tesouro da Aliança <ChevronRight size={14} />
               </div>
-              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/20">
-                <Zap size={14} />
+              <div className="w-10 h-10 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-gaming-gold/40 transition-colors">
+                <Trophy size={18} />
               </div>
            </div>
 
-           {/* Animated development glow */}
-           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gaming-gold/20">
-              <motion.div 
-                animate={{ x: ['100%', '-100%'] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="w-1/2 h-full bg-gaming-gold shadow-[0_0_10px_rgba(251,191,36,0.8)]"
-              />
+           {/* Stylized progress track */}
+           <div className="absolute bottom-6 left-10 right-10 flex flex-col gap-2">
+              <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: '60%' }}
+                  className="h-full bg-linear-to-r from-gaming-gold to-yellow-200 shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+                />
+              </div>
            </div>
-        </div>
+        </motion.div>
 
-        {/* Guide Item 3 */}
-        <div className="relative group overflow-hidden bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 flex flex-col gap-6 hover:border-green-500/30 transition-all cursor-not-allowed">
-           <div className="absolute top-4 right-4 z-10">
-              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
-                <Lock size={10} /> Em Obras
-              </span>
+        {/* Guide Item 3: Defesa de Base */}
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col gap-8 transition-all cursor-not-allowed shadow-2xl"
+        >
+           <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-green-500/40 to-transparent" />
+
+           <div className="absolute top-6 right-8">
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[7px] font-black uppercase tracking-widest text-green-400">Desenvolvimento</span>
+              </div>
            </div>
 
-           <div className="w-16 h-16 bg-linear-to-br from-green-500/20 to-green-500/5 rounded-2xl flex items-center justify-center text-green-400 group-hover:scale-110 group-hover:rotate-12 transition-all border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.1)]">
-              <Shield size={32} />
+           <div className="w-20 h-20 bg-linear-to-br from-green-600/30 to-green-900/10 rounded-[2rem] flex items-center justify-center text-green-400 group-hover:scale-110 group-hover:rotate-12 transition-all border border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)] relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-t from-green-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Shield size={40} className="relative z-10" />
            </div>
 
            <div className="relative z-10">
-              <h4 className="font-display font-black uppercase text-2xl mb-2 italic text-white group-hover:text-green-300 transition-colors">Defesa de Base 🛡️</h4>
-              <p className="text-[11px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
-                Sistemas de defesa avançada e layouts anti-loot para proteger sua hegemonia no servidor.
+              <h4 className="font-display font-black uppercase text-3xl mb-3 italic text-white group-hover:text-green-300 transition-colors tracking-tighter">Defesa <br /><span className="text-green-500">de Base 🛡️</span></h4>
+              <p className="text-xs text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+                Fortificações impenetráveis e sistemas de alerta precoce para neutralizar invasões noturnas.
               </p>
            </div>
 
-           <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center text-green-400/50 text-[10px] font-black uppercase tracking-widest gap-2">
-                 Manual de Fortificação <ChevronRight size={14} />
+           <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-green-400/30 text-[9px] font-black uppercase tracking-[0.2em] gap-2">
+                 Arquitetura Defensiva <ChevronRight size={14} />
               </div>
-              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/20">
-                <Zap size={14} />
+              <div className="w-10 h-10 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-green-500/40 transition-colors">
+                <ShieldAlert size={18} />
               </div>
            </div>
 
-           {/* Animated development glow */}
-           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-green-500/20">
-              <motion.div 
-                animate={{ x: ['-100%', '100%'] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                className="w-1/2 h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"
-              />
+           {/* Stylized progress track */}
+           <div className="absolute bottom-6 left-10 right-10 flex flex-col gap-2">
+              <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: '30%' }}
+                  className="h-full bg-linear-to-r from-green-600 to-green-400 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                />
+              </div>
            </div>
-        </div>
+        </motion.div>
 
         {/* Rules & Warnings Section */}
         <div className="lg:col-span-3">
