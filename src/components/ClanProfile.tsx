@@ -244,7 +244,7 @@ export function ClanProfile({
           <div className={`flex flex-col gap-3 md:gap-4 ${isMobile ? 'items-center' : ''}`}>
             <div className="flex flex-col">
               <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-display font-bold tracking-tight mb-1`}>
-                {myMember?.name || 'Recruta'} <span className="text-gaming-gold text-xs md:text-lg opacity-80 uppercase">[{clan?.tag || 'ORDM'}]</span>
+                {myMember?.name || 'Recruta'} <span className="text-gaming-gold text-xs md:text-lg opacity-80 uppercase">[{clan?.tag || '---'}]</span>
               </h1>
               <span className="text-[9px] md:text-[10px] text-white/40 uppercase tracking-widest font-bold max-w-[250px]">{leader && leader.userId === user?.uid ? "Fundador da Ordem Suprema" : "Membro leal da Ordem Suprema"}</span>
             </div>

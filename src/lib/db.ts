@@ -7,25 +7,20 @@ const getSql = () => {
   return neon(process.env.DATABASE_URL);
 };
 
-export const sql: { 
-  (strings: TemplateStringsArray, ...values: any[]): Promise<any>;
-  fromList: (list: string[]) => any;
-} = Object.assign(
-  (strings: TemplateStringsArray, ...values: any[]) => {
-    const instance = getSql();
-    if (!instance) {
-      throw new Error('Database not configured. Please set DATABASE_URL in the Settings menu (Secrets panel).');
-    }
-    return (instance as any)(strings, ...values);
-  },
-  {
-    fromList: (list: string[]) => {
-      const instance = getSql();
-      if (!instance) throw new Error('Database not configured');
-      return (instance as any).fromList(list);
-    }
+export const sql: any = (...args: any[]) => {
+  const instance = getSql();
+  if (!instance) {
+    throw new Error('Database not configured. Please set DATABASE_URL in the Settings menu (Secrets panel).');
   }
-);
+  return (instance as any)(...args);
+};
+
+// Add helper for raw identifiers if needed (Neon specific)
+sql.fromList = (list: string[]) => {
+  const instance = getSql();
+  if (!instance) throw new Error('Database not configured');
+  return (instance as any).fromList(list);
+};
 
   // Helper to initialize tables
 export async function initDb() {

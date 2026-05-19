@@ -13,11 +13,6 @@ const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret_clan_ordem";
 
-console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
-if (process.env.VERCEL) {
-  console.log(`[Server] Running on Vercel environment`);
-}
-
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -31,17 +26,8 @@ app.use((req, res, next) => {
 
 // --- API ROUTES ---
 
-let dbInitialized = false;
-async function ensureDb() {
-  if (!dbInitialized) {
-    await initDb().catch(err => console.error('[Database] Init failed:', err));
-    dbInitialized = true;
-  }
-}
-
 // Health check endpoint
-app.get("/api/health", async (req, res) => {
-  await ensureDb();
+app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running", timestamp: new Date().toISOString() });
 });
 
@@ -56,7 +42,7 @@ app.get("/api/db-status", async (req, res) => {
 });
 
 // Auth Middleware
-const authenticateToken = (req: express.Request & { user?: any }, res: express.Response, next: express.NextFunction) => {
+const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -71,7 +57,6 @@ const authenticateToken = (req: express.Request & { user?: any }, res: express.R
 
 // Login Route (Nickname + Password only)
 app.post("/api/auth/login", async (req, res) => {
-  await ensureDb();
   let { nickname, password } = req.body;
   if (!nickname) return res.status(400).json({ error: "Apelido é obrigatório" });
   if (!password) return res.status(400).json({ error: "Senha é obrigatória" });
@@ -108,7 +93,6 @@ app.post("/api/auth/login", async (req, res) => {
 
 // Registration Route (Email + Nickname + Password)
 app.post("/api/auth/register", async (req, res) => {
-  await ensureDb();
   let { email, name, password } = req.body;
   if (!email || !name || !password) {
     return res.status(400).json({ error: "Preencha todos os campos: email, nick e senha." });
@@ -149,7 +133,7 @@ app.post("/api/auth/register", async (req, res) => {
 });
 
 // Auth Middleware - Optional version
-const optionalAuthenticateToken = (req: express.Request & { user?: any }, res: express.Response, next: express.NextFunction) => {
+const optionalAuthenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -168,7 +152,6 @@ const optionalAuthenticateToken = (req: express.Request & { user?: any }, res: e
 
 // Get Clan Info
 app.get("/api/clan/:id", async (req, res) => {
-  await ensureDb();
   try {
     const clan = await sql`SELECT * FROM clans WHERE id = ${req.params.id}`;
     if (clan.length === 0) return res.status(404).json({ error: "Clan not found" });
@@ -187,10 +170,11 @@ app.get("/api/clan/:id", async (req, res) => {
 });
 
 // Update Clan Info
-app.patch("/api/clan/:id", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
-  await ensureDb();
+app.patch("/api/clan/:id", authenticateToken, async (req: any, res: any) => {
   const { logo_url, guide_image_post1 } = req.body;
+  // Simplified permission check: check if user is leader in next turn
   try {
+    // Basic leader check (hardcoded for user's email)
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
     if (!isLeader) return res.status(403).json({ error: "Unauthorized" });
 
@@ -207,8 +191,7 @@ app.patch("/api/clan/:id", authenticateToken, async (req: express.Request & { us
 });
 
 // Get Members
-app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
-  await ensureDb();
+app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: any, res: any) => {
   try {
     const members = await sql`
       SELECT * FROM members 
@@ -284,8 +267,7 @@ app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: express.
 });
 
 // Upsert Member (Join or update)
-app.post("/api/members", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
-  await ensureDb();
+app.post("/api/members", authenticateToken, async (req: any, res: any) => {
   const { name } = req.body;
   const userId = req.user.uid;
 
@@ -325,8 +307,7 @@ app.post("/api/members", authenticateToken, async (req: express.Request & { user
 });
 
 // Update Member Data
-app.patch("/api/members/me", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
-  await ensureDb();
+app.patch("/api/members/me", authenticateToken, async (req: any, res: any) => {
   const userId = req.user.uid;
   const updates = req.body;
   
@@ -417,7 +398,7 @@ app.patch("/api/members/me", authenticateToken, async (req: express.Request & { 
 });
 
 // Theft Reports
-app.get("/api/reports", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
+app.get("/api/reports", authenticateToken, async (req: any, res: any) => {
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
     if (!isLeader) return res.status(403).json({ error: "Unauthorized" });
@@ -429,7 +410,7 @@ app.get("/api/reports", authenticateToken, async (req: express.Request & { user?
   }
 });
 
-app.post("/api/reports", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
+app.post("/api/reports", authenticateToken, async (req: any, res: any) => {
   try {
     const { name, message } = req.body;
     await sql`
@@ -442,7 +423,7 @@ app.post("/api/reports", authenticateToken, async (req: express.Request & { user
   }
 });
 
-app.delete("/api/reports/:id", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
+app.delete("/api/reports/:id", authenticateToken, async (req: any, res: any) => {
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
     if (!isLeader) return res.status(403).json({ error: "Unauthorized" });
@@ -455,7 +436,7 @@ app.delete("/api/reports/:id", authenticateToken, async (req: express.Request & 
 });
 
 // Ban management
-app.post("/api/bans", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
+app.post("/api/bans", authenticateToken, async (req: any, res: any) => {
   const { userId, reason } = req.body;
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
@@ -470,7 +451,7 @@ app.post("/api/bans", authenticateToken, async (req: express.Request & { user?: 
 });
 
 // Role Management
-app.patch("/api/members/:id/role", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
+app.patch("/api/members/:id/role", authenticateToken, async (req: any, res: any) => {
   const { role } = req.body;
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
@@ -492,7 +473,7 @@ app.patch("/api/members/:id/role", authenticateToken, async (req: express.Reques
 });
 
 // Delete My Account
-app.delete("/api/members/me", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
+app.delete("/api/members/me", authenticateToken, async (req: any, res: any) => {
   const userId = req.user.uid;
   try {
     // Check if leader - user didn't specify what happens if leader deletes account,
@@ -522,13 +503,7 @@ app.all("/api/*", (req, res) => {
 
 // --- SERVER STARTUP ---
 
-export default app;
-
 async function startServer() {
-  if (process.env.VERCEL) {
-     return;
-  }
-
   console.log("[Server] Starting initialization sequence...");
 
   try {
@@ -552,7 +527,7 @@ async function startServer() {
       } catch (viteErr) {
         console.error("[Server] Failed to create Vite server:", viteErr);
       }
-    } else if (!process.env.VERCEL) {
+    } else {
       console.log("[Server] Configuring static file serving (Production)...");
       const distPath = path.join(process.cwd(), "dist");
       app.use(express.static(distPath));
@@ -562,7 +537,7 @@ async function startServer() {
     }
 
     // Global Error Handler
-    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    app.use((err: any, req: any, res: any, next: any) => {
       console.error('[Global Error Handler]:', err);
       if (res.headersSent) return next(err);
       res.status(500).json({ 
@@ -594,9 +569,4 @@ process.on('uncaughtException', (err) => {
   console.error('[Uncaught Exception] thrown:', err);
 });
 
-if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
-  startServer().catch(err => {
-    console.error("[Server] Critical failure during startup:", err);
-    process.exit(1);
-  });
-}
+startServer();

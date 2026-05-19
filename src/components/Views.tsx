@@ -47,7 +47,7 @@ import { useClan } from '../context/ClanContext';
 // Import local assets for resolution
 // Default Banner from ArtStation
 const defaultBanner = 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/large/andrej-otepka-square-04-tmp04web.jpg?1556922748';
-import goldLogo from '../assets/images/supreme_order_gold_logo_1778976451328.png';
+const goldLogo = 'https://api.dicebear.com/7.x/identicon/svg?seed=supreme'; // Placeholder for missing asset
 
 // --- SHARED UTILS ---
 const compressImage = (base64: string, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<string> => {

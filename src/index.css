@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gaming-bg: #050505;
+  --color-gaming-card: #0a0a0a;
+  --color-gaming-border: #1a1a1a;
+  --color-gaming-gold: #fbbf24;
+  --color-gaming-purple: #9333ea;
+  
+  --font-display: "Outfit", sans-serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+:root {
+  background-color: var(--color-gaming-bg);
+  color: white;
+  font-family: var(--font-sans);
+}
+
+.gaming-gradient {
+  background: radial-gradient(circle at center, rgba(147, 51, 234, 0.15) 0%, transparent 70%);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.3);
+}
