@@ -1,8 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onSnapshot, doc, collection, query, orderBy, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
-import { onAuthStateChanged, User, signOut, getRedirectResult } from 'firebase/auth';
-import { db, auth } from '../lib/firebase';
-import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 interface Member {
   id: string;
@@ -22,8 +18,7 @@ interface Member {
   completedMissions: string[];
   visitedMissionsBoard: boolean;
   lastDailyBonus?: string;
-  opacityLevel?: number;
-  status: 'online' | 'offline';
+  status: 'online' | 'offline' | 'away';
   avatarUrl?: string;
   joinedAt?: string;
   premiumPass?: boolean;
@@ -33,12 +28,14 @@ interface Member {
   updateRewardClaimed?: boolean;
   profileBg?: string;
   profileBorder?: string;
+  opacityLevel?: number;
 }
 
 interface TheftReport {
   id: string;
   reporterId: string;
   reporterName: string;
+  message: string;
   timestamp: string;
 }
 
@@ -53,6 +50,13 @@ interface Clan {
   ownerId: string;
   trophyCount: number;
   logoUrl?: string;
+  guideImagePost1?: string;
+}
+
+interface User {
+  uid: string;
+  email: string;
+  name: string;
 }
 
 interface ClanContextType {
@@ -62,6 +66,8 @@ interface ClanContextType {
   myMember: Member | null;
   loading: boolean;
   isAdmin: boolean;
+  login: (email: string, password?: string) => Promise<void>;
+  register: (email: string, name: string, password?: string) => Promise<void>;
   logout: () => Promise<void>;
   claimDailyBonus: () => Promise<boolean>;
   redeemPromoCode: (code: string) => Promise<{ success: boolean; message: string }>;
@@ -77,7 +83,7 @@ interface ClanContextType {
   isEcoMode: boolean;
   toggleEcoMode: () => Promise<void>;
   isOptimizing: boolean;
-  reportTheft: () => Promise<void>;
+  reportTheft: (message: string) => Promise<void>;
   claimUpdateReward: () => Promise<void>;
   theftReports: TheftReport[];
   clearTheftReport: (reportId: string) => Promise<void>;
@@ -90,7 +96,10 @@ interface ClanContextType {
 const ClanContext = createContext<ClanContextType | undefined>(undefined);
 
 export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('user_data');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [clan, setClan] = useState<Clan | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,341 +111,277 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [theftReports, setTheftReports] = useState<TheftReport[]>([]);
   const [activeTab, setActiveTab] = useState('inicio');
   const [activeSubTab, setActiveSubTab] = useState('guias');
-  
-  const toggleEcoMode = async () => {
-    setIsOptimizing(true);
-    // Reduced artificial delay for optimization process to feel faster
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const newValue = !isEcoMode;
-    setIsEcoMode(newValue);
-    localStorage.setItem('isEcoMode', String(newValue));
-    setIsOptimizing(false);
-  };
-  
-  // Default Clan ID for development
-  const DEFAULT_CLAN_ID = 'main-clan';
 
+  const DEFAULT_CLAN_ID = 'main-clan';
   const myMember = user ? members.find(m => m.userId === user.uid) || null : null;
 
-  useEffect(() => {
-    // Handle redirect result
-    getRedirectResult(auth).catch((error) => {
-      console.error('Error during redirect login:', error);
-      if (error.code === 'auth/unauthorized-domain') {
-        alert('Este domínio não está autorizado no Firebase. Por favor, adicione os domínios .run.app nas configurações do Firebase Authentication.');
-      }
-    });
+  const getAuthHeader = () => {
+    const token = localStorage.getItem('auth_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (!currentUser) {
-        setClan(null);
-        setMembers([]);
-        setLoading(false);
+  const fetchClanData = async () => {
+    try {
+      const res = await fetch(`/api/clan/${DEFAULT_CLAN_ID}`);
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        setClan(data);
       } else {
-        // When user is found, we keep loading as true until snapshots return or fail
-        setLoading(true);
+        const text = await res.text().catch(() => "Could not read response body");
+        console.error('Non-JSON or error response from clan API:', res.status, text.slice(0, 200));
       }
-    });
-
-    return () => unsubscribeAuth();
-  }, []);
-
-  // Presence management removed from here as it's handled in App.tsx
-  // or should be more robust
-
-  useEffect(() => {
-    setLoading(true);
-
-    // 1. Listen to Clan Data (Available even without login)
-    const clanDocRef = doc(db, 'clans', DEFAULT_CLAN_ID);
-    const unsubscribeClan = onSnapshot(clanDocRef, (snapshot) => {
-      if (snapshot.exists()) {
-        setClan({ id: snapshot.id, ...snapshot.data() } as Clan);
+    } catch (err: any) {
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        console.error('CRITICAL: Network connection to server failed. Ensure the server is running and reachable.', err);
       } else {
-        setClan(null);
+        console.error('Network error fetching clan:', err);
       }
-      if (!user) setLoading(false);
-    }, (error) => {
-      // Only log if user is logged in, otherwise it's expected if rules don't allow public get
-      if (user) {
-        console.error('Clan Snapshot Error:', error);
-      }
-      setLoading(false);
-    });
-
-    if (!user) {
-      setMembers([]);
-      return () => unsubscribeClan();
     }
+  };
 
-    // 2. Listen to Members (Requires login)
-    const membersRef = collection(db, 'clans', DEFAULT_CLAN_ID, 'members');
-    const membersQuery = query(membersRef, orderBy('role', 'asc'), orderBy('trophies', 'desc'));
-    
-    const unsubscribeMembers = onSnapshot(membersQuery, (snapshot) => {
-      const membersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Member[];
-      setMembers(membersData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Members Snapshot Error:', error);
-      setLoading(false);
-      // Don't throw here to avoid crashing the whole context
-      try {
-        handleFirestoreError(error, OperationType.LIST, `clans/${DEFAULT_CLAN_ID}/members`);
-      } catch (e) {
-        // Log is already done in handleFirestoreError
-      }
-    });
-
-    // 3. Listen to Theft Reports (Leaders only)
-    let unsubscribeReports = () => {};
-    if (myMember?.role === 'leader') {
-      const reportsRef = collection(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports');
-      const reportsQuery = query(reportsRef, orderBy('timestamp', 'desc'));
-      unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TheftReport[];
-        setTheftReports(data);
+  const fetchMembersData = async () => {
+    try {
+      const res = await fetch(`/api/clan/${DEFAULT_CLAN_ID}/members`, {
+         headers: getAuthHeader()
       });
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        setMembers(data);
+      } else {
+        const text = await res.text().catch(() => "Could not read response body");
+        console.error('Non-JSON or error response from members API:', res.status, text.slice(0, 200));
+      }
+    } catch (err: any) {
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        console.error('CRITICAL: Network connection to server failed. Ensure the server is running and reachable.', err);
+      } else {
+        console.error('Network error fetching members:', err);
+      }
     }
+  };
 
-    return () => {
-      unsubscribeClan();
-      unsubscribeMembers();
-      unsubscribeReports();
+  const fetchReportsData = async () => {
+    if (myMember?.role !== 'leader') return;
+    try {
+      const res = await fetch('/api/reports', { headers: getAuthHeader() });
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        setTheftReports(data);
+      } else {
+        const text = await res.text().catch(() => "Could not read response body");
+        console.error('Non-JSON or error response from reports API:', res.status, text.slice(0, 200));
+      }
+    } catch (err: any) {
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        console.error('CRITICAL: Network connection to server failed during reports fetch.', err);
+      } else {
+        console.error('Error fetching reports:', err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      // Only set loading to true if we don't have a user yet or if it's the first load
+      setLoading(true);
+      try {
+        // Wait a small moment to ensure server is ready in dev environments
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await Promise.all([
+          fetchClanData(),
+          fetchMembersData()
+        ]);
+      } catch (err) {
+        console.error('Failed to init clan data:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [user, myMember?.role]);
+    init();
+  }, [user?.uid]);
 
-  const isAdmin = members.find(m => m.userId === user?.uid)?.role === 'leader' || user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2020@gmail.com';
+  useEffect(() => {
+    // Polling for updates (every 10 seconds)
+    const interval = setInterval(() => {
+      fetchClanData();
+      fetchMembersData();
+      if (myMember?.role === 'leader') fetchReportsData();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [user?.uid, myMember?.role]);
+
+  const login = async (email: string, password?: string) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_data', JSON.stringify(data.user));
+      setUser(data.user);
+    } else {
+      throw new Error(data.error || 'Login failed');
+    }
+  };
+
+  const register = async (email: string, name: string, password?: string) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_data', JSON.stringify(data.user));
+      setUser(data.user);
+    } else {
+      throw new Error(data.error || 'Erro no cadastro');
+    }
+  };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (err) {
-      console.error('Failed to logout', err);
-    }
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    setUser(null);
+    setMembers([]);
+    setClan(null);
   };
 
   const updateMemberData = async (data: Partial<Member>) => {
-    if (!user || !myMember) return;
-    
-    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
-    // Sanitize data to remove 'id' if present, and any other internal fields
-    const { id, ...dataToUpdate } = data as any;
-    let finalData = { ...dataToUpdate };
-
-    // Handle XP and Level if XP changes
-    if (data.xp !== undefined) {
-      const newXp = data.xp;
-      
-      // Calculate new level based on provided thresholds
-      // Level 1: 50, Level 2: 100, Level 3: 200, Level 4: 500, Level 5: 1000...
-      const thresholds = [0, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000];
-      let calculatedLevel = 0;
-      for (let i = 0; i < thresholds.length; i++) {
-        if (newXp >= thresholds[i]) calculatedLevel = i;
-        else break;
-      }
-      calculatedLevel = Math.min(calculatedLevel, 10);
-      
-      if (calculatedLevel > (myMember.level || 0)) {
-        finalData.level = calculatedLevel;
-      }
-    }
-
-    try {
-      await updateDoc(memberRef, finalData);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `clans/${DEFAULT_CLAN_ID}/members/${user.uid}`);
+    const res = await fetch('/api/members/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify(data)
+    });
+    if (res.ok) {
+      await fetchMembersData();
     }
   };
 
   const completeMission = async (missionId: string, xpReward: number) => {
     if (!myMember || myMember.completedMissions?.includes(missionId)) return;
-    
     const newCompleted = [...(myMember.completedMissions || []), missionId];
     const newXp = (myMember.xp || 0) + xpReward;
-    
-    await updateMemberData({
-      completedMissions: newCompleted,
-      xp: newXp
-    });
+    await updateMemberData({ completedMissions: newCompleted, xp: newXp });
   };
 
   const markVisitedMissions = async () => {
     if (!myMember || myMember.visitedMissionsBoard) return;
     await updateMemberData({ visitedMissionsBoard: true });
   };
-  
-  const deleteMember = async (memberId: string) => {
-    if (!user || !myMember) return;
-    
-    // Permission: Only leader can delete others, but anyone can delete themselves
-    if (myMember.role !== 'leader' && myMember.userId !== memberId) {
-      console.warn('Unauthorized: You can only delete your own account unless you are a leader.');
-      return;
-    }
 
-    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
-    try {
-      await deleteDoc(memberRef);
-      
-      // If deleting own account, log out immediately
-      if (myMember.userId === memberId || user.uid === memberId) {
-        await logout();
-      }
-    } catch (err) {
-      console.error('Failed to delete member', err);
-      throw err;
-    }
+  const deleteMember = async (memberId: string) => {
+    // Implement on server if needed, for now just UI action
+    await logout();
   };
 
   const banMember = async (memberId: string) => {
-    if (!user || !myMember || myMember.role !== 'leader') return;
-    
-    const banRef = doc(db, 'bans', memberId);
-    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
-    
-    try {
-      // 1. Add to blacklist
-      await setDoc(banRef, {
-        userId: memberId,
-        bannedAt: new Date().toISOString(),
-        bannedBy: user.uid,
-        reason: 'Expulsão Definitiva (Ban)'
-      });
-      // 2. Remove from clan
-      await deleteDoc(memberRef);
-    } catch (err) {
-      console.error('Failed to ban member', err);
-      throw err;
-    }
+    await fetch('/api/bans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ userId: memberId, reason: 'Expulsão Definitiva' })
+    });
+    await fetchMembersData();
   };
 
   const updateMemberRole = async (memberId: string, role: string) => {
-    if (!user || !myMember) {
-      console.warn('UpdateMemberRole aborted: No user or member data');
-      return;
-    }
-    if (myMember.role !== 'leader') {
-      console.warn(`UpdateMemberRole aborted: User is not leader (Role: ${myMember.role})`);
-      return;
-    }
-    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
-    try {
-      await updateDoc(memberRef, { role });
-      console.log(`Successfully updated role of ${memberId} to ${role}`);
-    } catch (err) {
-      console.error('Failed to update member role', err);
+    const res = await fetch(`/api/members/${memberId}/role`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ role })
+    });
+    if (res.ok) {
+      await fetchMembersData();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Erro ao atualizar cargo');
     }
   };
 
   const updateClanGuideImage = async (imageUrl: string) => {
-    const isActuallyLeader = user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com' || myMember?.role === 'leader';
-    if (!user || !myMember || !isActuallyLeader) return;
-    const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
-    try {
-      await updateDoc(clanRef, { guideImagePost1: imageUrl });
-    } catch (err) {
-      console.error('Failed to update guide image', err);
-    }
+    await fetch(`/api/clan/${DEFAULT_CLAN_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ guide_image_post1: imageUrl })
+    });
+    await fetchClanData();
   };
 
   const updateClanLogo = async (imageUrl: string) => {
-    const isActuallyLeader = user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com' || myMember?.role === 'leader';
-    if (!user || !myMember || !isActuallyLeader) return;
-    const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
-    try {
-      await updateDoc(clanRef, { logoUrl: imageUrl });
-    } catch (err) {
-      console.error('Failed to update clan logo', err);
-    }
+    await fetch(`/api/clan/${DEFAULT_CLAN_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ logo_url: imageUrl })
+    });
+    await fetchClanData();
   };
 
   const updatePresenceStatus = async (status: 'online' | 'away' | 'offline') => {
-    if (!user) return;
-    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
-    try {
-      await updateDoc(memberRef, { status });
-    } catch (err) {
-      // Fail silently
-    }
+    await updateMemberData({ status });
   };
 
-  const getBrasiliaDate = () => {
-    const now = new Date();
-    // UTC-3
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const date = new Date(utc + (3600000 * -3));
-    return date.toISOString().split('T')[0];
+  const toggleEcoMode = async () => {
+    setIsOptimizing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    const newValue = !isEcoMode;
+    setIsEcoMode(newValue);
+    localStorage.setItem('isEcoMode', String(newValue));
+    setIsOptimizing(false);
   };
 
   const claimDailyBonus = async () => {
     if (!user || !myMember) return false;
-    
-    const today = getBrasiliaDate();
-    if (myMember.lastDailyBonus === today) {
-      return false;
-    }
-
-    await updateMemberData({
-      coins: (myMember.coins || 0) + 2,
-      lastDailyBonus: today
-    });
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    if (myMember.lastDailyBonus === today) return false;
+    await updateMemberData({ coins: (myMember.coins || 0) + 2, lastDailyBonus: today });
     return true;
   };
 
   const redeemPromoCode = async (code: string) => {
-    if (!user || !myMember) return { success: false, message: 'Usuário não encontrado' };
-    
+    if (!myMember) return { success: false, message: 'Usuário não encontrado' };
     const upperCode = code.toUpperCase();
     if (upperCode === 'ORDEMBÔNUS') {
-      await updateMemberData({ 
-        diamonds: (myMember.diamonds || 0) + 10,
-        coins: (myMember.coins || 0) + 500
-      });
+      await updateMemberData({ diamonds: (myMember.diamonds || 0) + 10, coins: (myMember.coins || 0) + 500 });
       return { success: true, message: 'Código resgatado! +10 Diamantes e +500 Moedas' };
     }
-    
-    if (upperCode === 'BETA2026') {
-      await updateMemberData({ boxes: (myMember.boxes || 0) + 1 });
-      return { success: true, message: 'Código resgatado! +1 Caixa' };
-    }
-
     return { success: false, message: 'Código inválido' };
   };
 
-  const reportTheft = async () => {
-    if (!user || !myMember) return;
-    const reportRef = doc(collection(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports'));
-    await setDoc(reportRef, {
-      reporterId: user.uid,
-      reporterName: myMember.name || 'Guerreiro anônimo',
-      timestamp: new Date().toISOString()
-    });
-  };
-
-  const claimUpdateReward = async () => {
-    if (!user || !myMember || myMember.updateRewardClaimed) return;
-    
-    await updateMemberData({
-      coins: (myMember.coins || 0) + 50,
-      updateRewardClaimed: true
+  const reportTheft = async (message: string) => {
+    await fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ name: myMember?.name, message })
     });
   };
 
   const clearTheftReport = async (reportId: string) => {
-    const reportRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports', reportId);
-    await deleteDoc(reportRef);
+    await fetch(`/api/reports/${reportId}`, {
+      method: 'DELETE',
+      headers: getAuthHeader()
+    });
+    await fetchReportsData();
   };
+
+  const claimUpdateReward = async () => {
+    if (myMember?.updateRewardClaimed) return;
+    await updateMemberData({ coins: (myMember?.coins || 0) + 50, updateRewardClaimed: true });
+  };
+
+  const isAdmin = myMember?.role === 'leader';
 
   return (
     <ClanContext.Provider value={{ 
-      user, clan, members, myMember, loading, isAdmin, logout, 
+      user, clan, members, myMember, loading, isAdmin, login, register, logout, 
       updateMemberData, claimDailyBonus, redeemPromoCode, 
       completeMission, markVisitedMissions, deleteMember, banMember, updateMemberRole,
       updateClanGuideImage, updateClanLogo, updatePresenceStatus,
