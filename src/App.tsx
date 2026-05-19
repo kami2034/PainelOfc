@@ -7,15 +7,12 @@ import { ClanProfile } from './components/ClanProfile';
 import { BaseStats, DetailedStats } from './components/Stats';
 import { MemberList } from './components/MemberList';
 import { Login } from './components/Login';
-import { NicknameSelector } from './components/NicknameSelector';
 import { useClan, ClanProvider } from './context/ClanContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDevice } from './hooks/useDevice';
 
 import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { LevelUpModal } from './components/LevelUpModal';
-import { db } from './lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 
 import { 
   CombateView, 
@@ -39,7 +36,10 @@ export default function App() {
 
 function AppContent() {
   const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, setActiveSubTab } = useClan();
+  const { 
+    user, loading, clan, members, myMember, isOptimizing, isEcoMode, 
+    updateMemberData, logout, activeTab, setActiveTab, setActiveSubTab 
+  } = useClan();
   const [initializing, setInitializing] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   
@@ -64,8 +64,9 @@ function AppContent() {
     if (!user) return;
     setInitializing(true);
     try {
-      const { createInitialClan } = await import('./services/clanService');
-      await createInitialClan(user.uid, user.email);
+      // In full-stack mode, the clan is auto-created or managed by the leader on the platform.
+      // This button can now just refresh or notify.
+      window.location.reload();
     } catch (err) {
       console.error(err);
     } finally {
@@ -79,6 +80,7 @@ function AppContent() {
     try {
       const { joinClan } = await import('./services/clanService');
       await joinClan(user.uid, nickname, user.email);
+      window.location.reload(); // Refresh to catch new member state
     } catch (err) {
       console.error(err);
     } finally {
@@ -191,16 +193,10 @@ function AppContent() {
 
   useEffect(() => {
     if (user) {
-      getDoc(doc(db, 'bans', user.uid)).then(snap => {
-        if (snap.exists()) setIsBanned(true);
-      }).catch(() => {});
-
-      // Presence management
+      // Presence management via API
       const updateStatus = async (status: 'online' | 'away' | 'offline') => {
         try {
-          const memberRef = doc(db, 'clans', 'main-clan', 'members', user.uid);
-          const { updateDoc } = await import('firebase/firestore');
-          await updateDoc(memberRef, { status });
+          await updateMemberData({ status });
         } catch (err) {
           // Fail silently
         }
@@ -214,15 +210,10 @@ function AppContent() {
         }
       };
 
-      // Set online on load
       updateStatus('online');
-      
       document.addEventListener('visibilitychange', handleVisibilityChange);
       
-      // Set offline on close
       const handleUnload = () => {
-        // Use synchronous update or navigator.sendBeacon pattern if possible, 
-        // but for Firestore we just attempt a fire-and-forget.
         updateStatus('offline');
       };
 
@@ -269,7 +260,7 @@ function AppContent() {
   }
 
   if (!clan) {
-    const isLeader = user.email === 'ryankevyn3000@gmail.com' || user.email === 'ryankevyn2020@gmail.com';
+    const isLeader = user.email === 'ryankevyn3000@gmail.com';
     
     return (
       <div className="min-h-screen bg-gaming-bg flex flex-col items-center justify-center p-6 text-center">
@@ -311,10 +302,21 @@ function AppContent() {
 
   if (!isMember) {
     return (
-      <NicknameSelector 
-        onSelect={handleJoinClan} 
-        loading={initializing} 
-      />
+      <div className="min-h-screen bg-gaming-bg flex flex-col items-center justify-center p-6 text-center">
+         <div className="w-24 h-24 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mb-8">
+            <ShieldAlert className="text-red-500" size={40} />
+         </div>
+         <h1 className="text-4xl font-display font-black uppercase mb-4 italic text-red-500">Erro de <span className="text-white">Identidade</span></h1>
+         <p className="text-white/40 max-w-sm uppercase text-[10px] tracking-[0.2em] font-bold mb-12 leading-relaxed">
+           Não encontramos seu registro de guerreiro na base de dados. Por favor, tente refazer o cadastro ou entre em contato com o suporte.
+         </p>
+         <button 
+          onClick={() => logout()}
+          className="px-12 py-4 bg-white text-black rounded-xl font-display font-black uppercase tracking-widest hover:bg-gaming-gold transition-all"
+         >
+           Voltar ao Início
+         </button>
+      </div>
     );
   }
 
