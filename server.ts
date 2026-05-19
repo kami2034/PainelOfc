@@ -55,26 +55,23 @@ const authenticateToken = (req: any, res: any, next: any) => {
   });
 };
 
-// Login Route (Email + Password only)
+// Login Route (Nickname + Password only)
 app.post("/api/auth/login", async (req, res) => {
-  let { email, password } = req.body;
-  if (!email) return res.status(400).json({ error: "Email é obrigatório" });
+  let { nickname, password } = req.body;
+  if (!nickname) return res.status(400).json({ error: "Apelido é obrigatório" });
   if (!password) return res.status(400).json({ error: "Senha é obrigatória" });
 
-  email = email.toLowerCase().trim();
-
   try {
-    // Check if user exists as a member (using email as userId for this simple auth)
-    const members = await sql`SELECT * FROM members WHERE user_id = ${email}`;
+    // Check if user exists as a member (using nickname/name)
+    const members = await sql`SELECT * FROM members WHERE name = ${nickname}`;
     if (members.length === 0) {
-      return res.status(404).json({ error: "Usuário não encontrado. Por favor, cadastre-se." });
+      return res.status(404).json({ error: "Apelido não encontrado. Por favor, cadastre-se." });
     }
 
     const member = members[0];
+    const email = member.user_id; // Still use email as internal unique ID (stored in user_id)
 
-    // Check password (using custom field in members table or site password)
-    // For this app, we store password directly in members table if provided, 
-    // or use a default if it was created via the old system.
+    // Check password
     const SITE_PASSWORD = process.env.SITE_PASSWORD || "shadow2034";
     const storedPassword = member.password || SITE_PASSWORD;
 
@@ -86,8 +83,8 @@ app.post("/api/auth/login", async (req, res) => {
     const banned = await sql`SELECT user_id FROM bans WHERE user_id = ${email}`;
     if (banned.length > 0) return res.status(403).json({ error: "Sua conta está banida" });
 
-    const token = jwt.sign({ uid: email, email, name: member.name }, JWT_SECRET);
-    res.json({ token, user: { uid: email, email, name: member.name } });
+    const token = jwt.sign({ uid: email, email: member.email || email, name: member.name }, JWT_SECRET);
+    res.json({ token, user: { uid: email, email: member.email || email, name: member.name } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: "Erro no servidor" });
@@ -124,7 +121,7 @@ app.post("/api/auth/register", async (req, res) => {
     // Using email as user_id for simplicity in this auth flow
     await sql`
       INSERT INTO members (id, user_id, name, role, completed_missions, xp, password) 
-      VALUES (${email}, ${email}, ${name}, ${role}, ${initialMissions}, 100, ${password})
+      VALUES (${email}, ${email}, ${name}, ${role}, ${initialMissions}, 15, ${password})
     `;
 
     const token = jwt.sign({ uid: email, email, name }, JWT_SECRET);
@@ -224,7 +221,7 @@ app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: any, res
       // Lazy-award "Primeiro Contato" ONLY for the requester to keep it fast
       if (requesterUid === m.user_id && !completed.includes('first_login')) {
         completed.push('first_login');
-        const newXp = (m.xp || 0) + 100;
+        const newXp = (m.xp || 0) + 15;
         await sql`UPDATE members SET completed_missions = ${JSON.stringify(completed)}, xp = ${newXp} WHERE user_id = ${m.user_id}`;
       }
 
@@ -286,7 +283,7 @@ app.post("/api/members", authenticateToken, async (req: any, res: any) => {
       
       await sql`
         INSERT INTO members (id, user_id, name, role, completed_missions, xp) 
-        VALUES (${userId}, ${userId}, ${name}, ${role}, ${initialMissions}, 100)
+        VALUES (${userId}, ${userId}, ${name}, ${role}, ${initialMissions}, 15)
       `;
     } else {
       // Update name if changed
@@ -298,7 +295,7 @@ app.post("/api/members", authenticateToken, async (req: any, res: any) => {
         const completed = JSON.parse(member[0].completed_missions || '[]');
         if (!completed.includes('first_login')) {
           completed.push('first_login');
-          const newXp = (member[0].xp || 0) + 100;
+          const newXp = (member[0].xp || 0) + 15;
           await sql`UPDATE members SET completed_missions = ${JSON.stringify(completed)}, xp = ${newXp} WHERE user_id = ${userId}`;
         }
       }
@@ -472,6 +469,26 @@ app.patch("/api/members/:id/role", authenticateToken, async (req: any, res: any)
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Delete My Account
+app.delete("/api/members/me", authenticateToken, async (req: any, res: any) => {
+  const userId = req.user.uid;
+  try {
+    // Check if leader - user didn't specify what happens if leader deletes account,
+    // usually leaders shouldn't be able to delete account before transferring leadership
+    // but I'll allow it for now or just delete.
+    const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
+    if (isLeader) {
+      return res.status(400).json({ error: "O Líder Supremo não pode deletar a conta. Transfira a liderança primeiro." });
+    }
+
+    await sql`DELETE FROM members WHERE user_id = ${userId}`;
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    res.status(500).json({ error: "Erro ao deletar conta" });
   }
 });
 

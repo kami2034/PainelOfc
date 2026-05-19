@@ -33,6 +33,13 @@ export function MissoesView() {
       icon: Sword,
     },
     {
+      id: 'check_optimization',
+      title: 'Otimizador da Ordem',
+      description: 'Verifique as configurações de otimização para dispositivos de baixa performance.',
+      xp: 20,
+      icon: Zap,
+    },
+    {
       id: 'join_tournament',
       title: 'Em Breve',
       description: 'Participe do seu primeiro torneio oficial.',

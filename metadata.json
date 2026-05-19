@@ -1,6 +1,6 @@
 {
-  "name": "Remix: Remix: Untitled",
-  "description": "",
+  "name": "Painel Ordem Suprema",
+  "description": "Painel oficial de gerenciamento da aliança Ordem Suprema, com sistema de membros, ranking e táticas de guerra.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

@@ -281,7 +281,7 @@ export function ClanProfile({
                     <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Nível de Ordem</span>
                     <span className="text-2xl font-display font-black text-gaming-gold drop-shadow-[0_0_10px_rgba(251,191,36,0.3)] italic">{currentLevel}</span>
                  </div>
-                 <span className="text-[9px] font-mono text-white/30">{currentXp} XP</span>
+                 <span className="text-[9px] font-mono text-white/30">{currentXp} {currentLevel < 10 && `/ ${nextLevelXp}`} XP</span>
                </div>
                <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
                   <motion.div 

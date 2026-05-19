@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Skull, 
@@ -977,7 +977,13 @@ export function PerfilView() {
 
 // --- CONFIGURACOES VIEW ---
 export function ConfiguracoesView() {
-  const { logout, myMember, updateMemberData, isEcoMode, toggleEcoMode, isOptimizing, deleteMember } = useClan();
+  const { logout, myMember, updateMemberData, isEcoMode, toggleEcoMode, isOptimizing, deleteMyAccount, completeMission } = useClan();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    completeMission('check_optimization', 20);
+  }, []);
 
   const handleThemeChange = (theme: 'dark' | 'neon' | 'gold' | 'classic') => {
     updateMemberData({ appTheme: theme });
@@ -987,17 +993,17 @@ export function ConfiguracoesView() {
     updateMemberData({ opacityLevel: Number(e.target.value) });
   };
 
-  const handleDeleteAccount = async () => {
+  const confirmDeleteAccount = async () => {
     if (!myMember) return;
     
-    if (confirm("TEM CERTEZA? Esta ação é irreversível e você perderá todo o seu progresso na Aliança Suprema. Suas medalhas, diamonds e status serão apagados.")) {
-       try {
-         await deleteMember(myMember.userId);
-         // Deletion handles logout in the context
-       } catch (err) {
-         console.error('Erro ao deletar conta:', err);
-         alert("Ocorreu um erro ao tentar deletar sua conta. Tente novamente mais tarde.");
-       }
+    setIsDeleting(true);
+    try {
+      await deleteMyAccount();
+    } catch (err: any) {
+      console.error('Erro ao deletar conta:', err);
+      alert(err.message || "Ocorreu um erro ao tentar deletar sua conta.");
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -1131,7 +1137,7 @@ export function ConfiguracoesView() {
               <div className="pt-6 mt-6 border-t border-white/5">
                 <h5 className="text-[10px] uppercase font-black text-red-500 tracking-widest mb-4">Zona de Risco</h5>
                 <button 
-                  onClick={handleDeleteAccount}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="w-full py-4 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
                 >
                   <Trash2 size={16} /> Deletar Conta Definitivamente
@@ -1140,6 +1146,69 @@ export function ConfiguracoesView() {
            </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
+          >
+             <motion.div 
+               initial={{ scale: 0.9, opacity: 0, y: 20 }}
+               animate={{ scale: 1, opacity: 1, y: 0 }}
+               exit={{ scale: 0.9, opacity: 0, y: 20 }}
+               className="max-w-md w-full bg-gaming-card border border-red-500/30 rounded-[2.5rem] p-8 md:p-10 shadow-[0_0_100px_rgba(239,68,68,0.2)] overflow-hidden relative"
+             >
+                <div className="absolute top-0 left-0 w-full h-1 bg-red-500" />
+                
+                <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mb-8 mx-auto">
+                   <ShieldAlert className="text-red-500" size={40} />
+                </div>
+
+                <h3 className="text-2xl font-display font-black uppercase italic tracking-tighter text-center mb-4">
+                  Decisão <span className="text-red-500">Irreversível</span>
+                </h3>
+
+                <p className="text-xs text-white/60 text-center uppercase font-black tracking-widest leading-relaxed mb-8">
+                  Você está prestes a apagar sua existência na <span className="text-white">Aliança Suprema</span>. Todo o seu progresso, medalhas, XP e conquistas serão eliminados dos nossos servidores de forma <span className="text-red-500 font-bold">PERMANENTE</span>.
+                </p>
+
+                <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-4 mb-8 flex gap-3 items-start">
+                   <AlertTriangle className="text-red-500 shrink-0" size={20} />
+                   <p className="text-[10px] uppercase font-bold text-red-500/80 leading-tight">
+                     Não há volta. Uma vez deletado, seus dados não podem ser recuperados nem mesmo pela liderança.
+                   </p>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                   <button 
+                    onClick={confirmDeleteAccount}
+                    disabled={isDeleting}
+                    className="w-full py-5 bg-red-600 text-white rounded-2xl font-display font-black uppercase tracking-[0.2em] text-[10px] hover:bg-white hover:text-red-600 transition-all shadow-[0_0_30px_rgba(239,68,68,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
+                   >
+                     {isDeleting ? (
+                       <>
+                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                         <span>Processando Exclusão...</span>
+                       </>
+                     ) : (
+                       "Sim, Deletar Tudo Agora"
+                     )}
+                   </button>
+                   <button 
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="w-full py-4 text-white/40 hover:text-white transition-colors text-[9px] font-black uppercase tracking-widest"
+                   >
+                     Cancelar e Voltar à Base
+                   </button>
+                </div>
+             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

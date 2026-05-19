@@ -66,7 +66,7 @@ interface ClanContextType {
   myMember: Member | null;
   loading: boolean;
   isAdmin: boolean;
-  login: (email: string, password?: string) => Promise<void>;
+  login: (nickname: string, password?: string) => Promise<void>;
   register: (email: string, name: string, password?: string) => Promise<void>;
   logout: () => Promise<void>;
   claimDailyBonus: () => Promise<boolean>;
@@ -77,6 +77,7 @@ interface ClanContextType {
   deleteMember: (memberId: string) => Promise<void>;
   banMember: (memberId: string) => Promise<void>;
   updateMemberRole: (memberId: string, role: string) => Promise<void>;
+  deleteMyAccount: () => Promise<void>;
   updateClanGuideImage: (imageUrl: string) => Promise<void>;
   updateClanLogo: (imageUrl: string) => Promise<void>;
   updatePresenceStatus: (status: 'online' | 'away' | 'offline') => Promise<void>;
@@ -215,11 +216,11 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [user?.uid, myMember?.role]);
 
-  const login = async (email: string, password?: string) => {
+  const login = async (nickname: string, password?: string) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ nickname, password })
     });
     const data = await res.json();
     if (res.ok) {
@@ -306,6 +307,19 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteMyAccount = async () => {
+    const res = await fetch('/api/members/me', {
+      method: 'DELETE',
+      headers: getAuthHeader()
+    });
+    if (res.ok) {
+      await logout();
+    } else {
+      const data = await res.json();
+      throw new Error(data.error || 'Erro ao deletar conta');
+    }
+  };
+
   const updateClanGuideImage = async (imageUrl: string) => {
     await fetch(`/api/clan/${DEFAULT_CLAN_ID}`, {
       method: 'PATCH',
@@ -384,6 +398,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, clan, members, myMember, loading, isAdmin, login, register, logout, 
       updateMemberData, claimDailyBonus, redeemPromoCode, 
       completeMission, markVisitedMissions, deleteMember, banMember, updateMemberRole,
+      deleteMyAccount,
       updateClanGuideImage, updateClanLogo, updatePresenceStatus,
       isEcoMode, toggleEcoMode, isOptimizing,
       reportTheft, theftReports, clearTheftReport,

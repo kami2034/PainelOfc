@@ -14,7 +14,7 @@ export const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || (mode === 'register' && !nickname)) {
+    if (!nickname || !password || (mode === 'register' && !email)) {
         setError('Por favor, preencha todos os campos obrigatórios.');
         return;
     }
@@ -23,7 +23,7 @@ export const Login: React.FC = () => {
     setError(null);
     try {
       if (mode === 'login') {
-        await login(email, password);
+        await login(nickname, password);
       } else {
         await register(email, nickname, password);
       }
@@ -56,44 +56,41 @@ export const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'register' && (
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 ml-1">
+                Email do Guerreiro
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="exemplo@email.com"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-gaming-gold/50 transition-all font-medium"
+                  required={mode === 'register'}
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 ml-1">
-              Email do Guerreiro
+              Nome de Guerra (Nickname)
             </label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
               <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="exemplo@email.com"
+                type="text" 
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="Seu Nickname Permanente"
                 className="w-full bg-black/40 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-gaming-gold/50 transition-all font-medium"
                 required
               />
             </div>
           </div>
-
-          {mode === 'register' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-            >
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 ml-1">
-                Nome de Guerra (Nickname)
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                <input 
-                  type="text" 
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Seu Nickname Permanente"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white text-sm focus:outline-none focus:border-gaming-gold/50 transition-all font-medium"
-                  required
-                />
-              </div>
-            </motion.div>
-          )}
 
           <div>
             <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 ml-1">

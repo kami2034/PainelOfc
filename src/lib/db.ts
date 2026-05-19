@@ -2,7 +2,6 @@ import { neon } from '@neondatabase/serverless';
 
 const getSql = () => {
   if (!process.env.DATABASE_URL) {
-    console.error('CRITICAL: DATABASE_URL environment variable is missing.');
     return null;
   }
   return neon(process.env.DATABASE_URL);
@@ -11,7 +10,7 @@ const getSql = () => {
 export const sql: any = (...args: any[]) => {
   const instance = getSql();
   if (!instance) {
-    throw new Error('Database not configured. Please set DATABASE_URL in Settings.');
+    throw new Error('Database not configured. Please set DATABASE_URL in the Settings menu (Secrets panel).');
   }
   return (instance as any)(...args);
 };
@@ -140,7 +139,10 @@ export async function initDb() {
   if (clan.length === 0) {
     await sql`
       INSERT INTO clans (id, name, tag, description) 
-      VALUES ('main-clan', 'Ordem Suprema', 'OS', 'Clã principal da Ordem Suprema')
+      VALUES ('main-clan', 'Ordem Suprema', 'ORDM', 'Clã principal da Ordem Suprema')
     `;
+  } else {
+    // Force update tag to ORDM if it was OS
+    await sql`UPDATE clans SET tag = 'ORDM' WHERE id = 'main-clan' AND (tag = 'OS' OR tag IS NULL)`;
   }
 }
