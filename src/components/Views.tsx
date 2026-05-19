@@ -44,6 +44,11 @@ import {
 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 
+// Import local assets for resolution
+// Default Banner from ArtStation
+const defaultBanner = 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/large/andrej-otepka-square-04-tmp04web.jpg?1556922748';
+import goldLogo from '../assets/images/supreme_order_gold_logo_1778976451328.png';
+
 // --- SHARED UTILS ---
 const compressImage = (base64: string, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<string> => {
   return new Promise((resolve) => {
@@ -81,7 +86,7 @@ export function GuiaView() {
   const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
   const [showTheftReported, setShowTheftReported] = useState(false);
 
-  const isLeader = myMember?.role === 'leader' || user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com';
+  const isLeader = myMember?.role === 'leader' || user?.email === 'ryankevyn3000@gmail.com';
   // Heuristic: If guideImagePost1 is a data URL, it's likely the logo used as fallback. Use default guide image instead.
   const displayImage = (clan?.guideImagePost1 && !clan?.guideImagePost1.startsWith('data:image')) 
     ? clan.guideImagePost1 
@@ -92,14 +97,23 @@ export function GuiaView() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+
     const reader = new FileReader();
     reader.onload = async (event) => {
-      if (event.target?.result) {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
         try {
-          const compressed = await compressImage(event.target.result as string, 800, 800, 0.5);
-          updateClanGuideImage(compressed);
+          // Bypass compression for GIFs to preserve animation
+          if (isGif) {
+             updateClanGuideImage(dataUrl);
+          } else {
+             const compressed = await compressImage(dataUrl, 800, 800, 0.5);
+             updateClanGuideImage(compressed);
+          }
         } catch (err) {
-          console.error('Error compressing guide image:', err);
+          console.error('Error processing guide image:', err);
+          updateClanGuideImage(dataUrl); // Fallback to raw if compression fails
         }
       }
     };
@@ -516,9 +530,12 @@ export function GuiaView() {
                     </div>
                     <button 
                       onClick={async () => {
-                        await reportTheft();
-                        setShowTheftReported(true);
-                        setTimeout(() => setShowTheftReported(false), 5000);
+                        const msg = prompt('Descreva o furto (ex: Jogador X roubou minha caravana em Sector 7):');
+                        if (msg) {
+                          await reportTheft(msg);
+                          setShowTheftReported(true);
+                          setTimeout(() => setShowTheftReported(false), 5000);
+                        }
                       }}
                       className="flex items-center gap-3 px-6 py-2 bg-red-500 text-black rounded-xl hover:bg-white transition-all font-black uppercase text-[9px] tracking-widest"
                     >
@@ -653,10 +670,32 @@ export function PerfilView() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+
+    // GIF level check
+    if (isGif && (myMember?.level || 0) < 1) {
+      alert('⚠️ ATENÇÃO: Fotos de perfil em GIF (Animadas) são exclusivas para guerreiros Nível 1 ou superior.');
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      updateMemberData({ avatarUrl: dataUrl });
+      if (dataUrl) {
+        try {
+          // Bypass compression for GIFs to preserve animation
+          if (isGif) {
+            updateMemberData({ avatarUrl: dataUrl });
+          } else {
+            // Still compress other formats for performance
+            const compressed = await compressImage(dataUrl, 400, 400, 0.7);
+            updateMemberData({ avatarUrl: compressed });
+          }
+        } catch (err) {
+          console.error('Error processing avatar:', err);
+          updateMemberData({ avatarUrl: dataUrl });
+        }
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -668,8 +707,6 @@ export function PerfilView() {
   };
 
   const stats = [
-    { label: 'Conquistas', val: myMember?.trophies || 0, icon: Trophy, color: 'text-gaming-gold' },
-    { label: 'Doações', val: myMember?.donations || 0, icon: Zap, color: 'text-blue-400' },
     { 
       label: 'Poder de Herói', 
       val: myMember?.heroPower || 0, 
@@ -736,6 +773,29 @@ export function PerfilView() {
                 </div>
               </div>
             ))}
+
+            {/* In Development: Animated Banners */}
+            <div className="md:col-span-3 mt-4">
+               <div className="flex items-center gap-3 mb-6">
+                  <div className="px-3 py-1 bg-gaming-gold/10 border border-gaming-gold/20 rounded-full">
+                     <span className="text-[8px] font-black uppercase text-gaming-gold tracking-widest">NOVIDADE EM BREVE</span>
+                  </div>
+                  <h4 className="text-sm font-black uppercase text-white/40 tracking-widest">Banners Animados para Perfil</h4>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2].map(i => (
+                    <div key={i} className="relative aspect-video rounded-2xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-3 overflow-hidden group">
+                       <Lock size={24} className="text-white/10 group-hover:text-gaming-gold transition-colors" />
+                       <span className="text-[9px] font-black uppercase text-white/20 tracking-tighter">Em Desenvolvimento</span>
+                       
+                       {!isEcoMode && (
+                        <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                       )}
+                    </div>
+                  ))}
+               </div>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -744,8 +804,23 @@ export function PerfilView() {
 
   return (
     <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-8">
-      <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8 bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 md:p-8">
-         <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1 relative group bg-black/20 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
+      <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8 bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 md:p-8 relative overflow-hidden group">
+         {!isEcoMode && (
+           <div className="absolute inset-0 pointer-events-none opacity-15 transition-opacity duration-700">
+             <img 
+               src={myMember?.profileBg || defaultBanner} 
+               alt="" 
+               className="w-full h-full object-cover"
+               onError={(e) => {
+                 const img = e.target as HTMLImageElement;
+                 if (img.src !== defaultBanner) img.src = defaultBanner;
+               }}
+             />
+             <div className="absolute inset-0 bg-linear-to-r from-gaming-card via-gaming-card/60 to-transparent" />
+           </div>
+         )}
+         
+         <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1 relative z-10 group bg-black/20 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
             {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold/20' : 'bg-gaming-gold/10'}`} />}
             <img 
               src={myMember?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} 
@@ -818,7 +893,9 @@ export function PerfilView() {
                       </button>
                     </div>
                  ) : (
-                    <span className="text-lg md:text-2xl font-mono font-black">{s.val.toLocaleString()}</span>
+                    <span className="font-mono font-black block mt-0.5 text-lg md:text-2xl text-white">
+                      {typeof s.val === 'number' ? s.val.toLocaleString() : s.val}
+                    </span>
                  )}
                  {s.editable && !editingPower && (
                    <span className="text-[6px] uppercase text-gaming-gold/50 block mt-1">Clique para editar</span>
@@ -828,10 +905,71 @@ export function PerfilView() {
          ))}
       </div>
 
-      <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col items-center justify-center min-h-[200px] border-dashed">
-         <Trophy size={48} className="text-white/10 mb-4" />
-         <h4 className="font-display font-black uppercase text-lg text-white/20">Registro de Conquistas</h4>
-         <p className="text-[10px] text-white/10 uppercase font-black tracking-[0.3em] mt-2">Em Desenvolvimento</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="relative group bg-gaming-card/40 border border-gaming-border border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center min-h-[260px] overflow-hidden transition-all hover:bg-gaming-card/60">
+           {!isEcoMode && (
+             <motion.div 
+               animate={{ 
+                 opacity: [0.05, 0.1, 0.05],
+                 scale: [1, 1.05, 1]
+               }}
+               transition={{ duration: 4, repeat: Infinity }}
+               className="absolute inset-0 bg-linear-to-b from-gaming-gold/10 to-transparent" 
+             />
+           )}
+           <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-2xl">
+                 <Trophy size={40} className="text-white/10 group-hover:text-gaming-gold transition-colors duration-500" />
+              </div>
+              <h4 className="font-display font-black uppercase text-xl text-white/40 tracking-tighter mb-2">Conquistas</h4>
+              <p className="text-[10px] text-white/20 uppercase font-black tracking-[0.25em] max-w-[200px] leading-relaxed">
+                Sistema de glória e medalhas lendárias em fase de forja
+              </p>
+              
+              <div className="mt-8 flex gap-3 opacity-30">
+                 {[1, 2, 3, 4].map(i => (
+                   <motion.div 
+                    key={i} 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10 + i * 2, repeat: Infinity, ease: "linear" }}
+                    className="w-10 h-10 rounded-full border border-dashed border-white/20 flex items-center justify-center"
+                   >
+                      <Star size={14} className="text-white/10" />
+                   </motion.div>
+                 ))}
+              </div>
+           </div>
+        </div>
+
+        <div className="relative group bg-gaming-card/40 border border-gaming-border border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center min-h-[260px] overflow-hidden transition-all hover:bg-gaming-card/60">
+           {!isEcoMode && (
+             <motion.div 
+               animate={{ 
+                 opacity: [0.05, 0.1, 0.05],
+                 x: [-10, 10, -10]
+               }}
+               transition={{ duration: 5, repeat: Infinity }}
+               className="absolute inset-0 bg-linear-to-tr from-blue-500/10 to-transparent" 
+             />
+           )}
+           <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-2xl">
+                 <Zap size={40} className="text-white/10 group-hover:text-blue-400 transition-colors duration-500" />
+              </div>
+              <h4 className="font-display font-black uppercase text-xl text-white/40 tracking-tighter mb-2">Doações</h4>
+              <p className="text-[10px] text-white/20 uppercase font-black tracking-[0.25em] max-w-[200px] leading-relaxed">
+                Log de contribuições e tesouraria em desenvolvimento
+              </p>
+              
+              <div className="mt-8 w-48 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                 <motion.div 
+                   animate={{ x: ['-100%', '100%'] }}
+                   transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                   className="h-full w-1/3 bg-linear-to-r from-transparent via-blue-500/30 to-transparent" 
+                 />
+              </div>
+           </div>
+        </div>
       </div>
     </div>
   );
@@ -922,20 +1060,20 @@ export function ConfiguracoesView() {
                   <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] block mb-4">Arte de Fundo do Perfil</span>
                   <div className="grid grid-cols-2 gap-2">
                      {[
-                       { id: 'padrão', label: 'Padrão', url: '/src/assets/images/clan_bg_art_1778972376934.png' },
-                       { id: 'cibernética', label: 'Cibernética', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' },
-                       { id: 'guerra', label: 'Guerra', url: 'https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070' },
-                       { id: 'moderna', label: 'Moderna', url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2070' }
-                     ].map(art => (
-                       <button 
-                         key={art.id}
-                         onClick={() => updateMemberData({ profileBg: art.url })}
-                         className={`relative overflow-hidden group py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${myMember?.profileBg === art.url || (!myMember?.profileBg && art.id === 'padrão') ? 'border-gaming-gold text-gaming-gold' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
-                       >
-                         <img src={art.url} className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity" alt="" />
-                         <span className="relative z-10">{art.label}</span>
-                       </button>
-                     ))}
+                       { id: 'padrão', label: 'Padrão', url: defaultBanner },
+                       { id: 'cibernética', label: 'Cibernética', url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070' },
+                       { id: 'guerra', label: 'Guerra', url: 'https://d.furaffinity.net/art/shyza/1664327855/1664327855.shyza_cerberus__1_.jpg' },
+                       { id: 'moderna', label: 'Moderna', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070' }
+                       ].map(art => (
+                        <button 
+                          key={art.id}
+                          onClick={() => updateMemberData({ profileBg: art.url })}
+                          className={`relative overflow-hidden group py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${myMember?.profileBg === art.url || (!myMember?.profileBg && art.id === 'padrão') ? 'border-gaming-gold text-gaming-gold shadow-[0_0_15px_rgba(251,191,36,0.2)]' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
+                        >
+                          <img src={art.url} className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-30 transition-opacity" alt="" />
+                          <span className="relative z-10">{art.label}</span>
+                        </button>
+                      ))}
                   </div>
                </div>
 
@@ -1456,12 +1594,13 @@ export function GerenciaView() {
                       <User size={20} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black uppercase text-white">{report.reporterName}</h4>
-                      <p className="text-[8px] font-mono font-bold text-white/30">{new Date(report.timestamp).toLocaleString('pt-BR')}</p>
+                      <span className="text-[8px] font-black uppercase text-gaming-gold tracking-widest block mb-1">Autor da Denúncia</span>
+                      <h4 className="text-sm font-black uppercase text-white leading-none">{report.reporterName}</h4>
+                      <p className="text-[8px] font-mono font-bold text-white/30 mt-1">{new Date(report.timestamp).toLocaleString('pt-BR')}</p>
                     </div>
                   </div>
-                  <div className="text-[9px] font-bold text-white/50 uppercase italic leading-relaxed">
-                    Relatou ocorrência de furto de caravana/recursos. Verificar logs do jogo.
+                  <div className="text-[9px] font-bold text-white/50 uppercase italic leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5">
+                    {report.message || "Relatou ocorrência de furto de caravana/recursos. Verificar logs do jogo."}
                   </div>
                 </motion.div>
               ))}

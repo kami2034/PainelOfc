@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Check, ArrowRight, ShieldCheck, LogOut } from 'lucide-react';
-import { auth } from '../lib/firebase';
-import { signOut } from 'firebase/auth';
+import { useClan } from '../context/ClanContext';
 
 interface NicknameSelectorProps {
   onSelect: (nickname: string) => void;
@@ -10,6 +9,7 @@ interface NicknameSelectorProps {
 }
 
 export function NicknameSelector({ onSelect, loading }: NicknameSelectorProps) {
+  const { logout } = useClan();
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
 
@@ -27,7 +27,7 @@ export function NicknameSelector({ onSelect, loading }: NicknameSelectorProps) {
   };
 
   const handleLogout = () => {
-    signOut(auth);
+    logout();
   };
 
   return (

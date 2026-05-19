@@ -1,9 +1,11 @@
-import { motion } from 'motion/react';
-import React, { useRef } from 'react';
-import { Shield, ChevronRight, MapPin, Search, Users, LogOut, Camera, Circle, Skull, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import React, { useRef, useState } from 'react';
+import { Shield, ChevronRight, MapPin, Search, Users, LogOut, Camera, Circle, Skull, BookOpen, Image as ImageIcon, Star } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 import { updateMemberAvatar } from '../services/clanService';
-import { auth } from '../lib/firebase';
+
+// Default Banner from ArtStation
+const defaultBanner = 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/large/andrej-otepka-square-04-tmp04web.jpg?1556922748';
 
 export function ClanProfile({ 
   isMobile = false,
@@ -14,15 +16,17 @@ export function ClanProfile({
   activeTab?: string;
   setActiveTab: (tab: string) => void;
 }) {
-  const { clan, members, user, loading, isEcoMode, setActiveSubTab } = useClan();
+  const { clan, members, user, loading, isEcoMode, setActiveSubTab, logout } = useClan();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const gifInputRef = useRef<HTMLInputElement>(null);
+  const [showUploadOptions, setShowUploadOptions] = useState(false);
   
   const myMember = members.find(m => m.userId === user?.uid);
   const leader = members.find(m => m.role === 'leader');
 
   const handleAvatarClick = () => {
     if (myMember) {
-      fileInputRef.current?.click();
+      setShowUploadOptions(!showUploadOptions);
     }
   };
 
@@ -56,15 +60,34 @@ export function ClanProfile({
     });
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, selectedGif: boolean) => {
     const file = e.target.files?.[0];
     if (file && clan && user) {
+      const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+      
+      if (selectedGif && !isGif) {
+        alert('⚠️ Por favor, selecione um arquivo .gif para esta opção.');
+        return;
+      }
+
+      // GIF level check (Keep consistent with other profile views)
+      if (isGif && (myMember?.level || 0) < 1) {
+        alert('⚠️ ATENÇÃO: Fotos de perfil em GIF (Animadas) são exclusivas para guerreiros Nível 1 ou superior.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64String = reader.result as string;
         try {
-          const compressed = await compressImage(base64String);
-          await updateMemberAvatar(clan.id, user.uid, compressed);
+          if (isGif) {
+            // Bypass compression for GIFs to preserve animation
+            await updateMemberAvatar(clan.id, user.uid, base64String);
+          } else {
+            const compressed = await compressImage(base64String);
+            await updateMemberAvatar(clan.id, user.uid, compressed);
+          }
+          setShowUploadOptions(false);
         } catch (err) {
           console.error('Failed to update avatar', err);
         }
@@ -85,14 +108,14 @@ export function ClanProfile({
     }
   };
 
-  // Level thresholds and logic
-  const thresholds = [0, 50, 100, 200, 500, 1000, 1800, 2600, 3400, 4200, 5000];
+  // Level thresholds and logic (0 to 10)
+  const thresholds = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500];
   const currentXp = myMember?.xp || 0;
   const currentLevel = myMember?.level || 0;
   const nextLevelXp = thresholds[currentLevel + 1] || thresholds[thresholds.length - 1];
   const curLevelXp = thresholds[currentLevel] || 0;
   
-  const xpProgress = currentLevel >= 10 ? 100 : ((currentXp - curLevelXp) / (nextLevelXp - curLevelXp)) * 100;
+  const xpProgress = currentLevel >= 10 ? 100 : Math.min(100, ((currentXp - curLevelXp) / (Math.max(1, nextLevelXp - curLevelXp))) * 100);
   const trophyProgress = ((myMember?.trophies || 0) / 100) * 100;
 
   const getBorderClasses = (borderId?: string) => {
@@ -127,11 +150,17 @@ export function ClanProfile({
       </div>
       
       {/* Background Image/Art */}
-      <div className="absolute inset-0 opacity-20 md:opacity-40 mix-blend-overlay">
+      <div className="absolute inset-0 opacity-15 md:opacity-20 transition-opacity duration-700">
         <img 
-          src={myMember?.profileBg || "/src/assets/images/clan_bg_art_1778972376934.png"} 
+          src={myMember?.profileBg || defaultBanner} 
           alt="Art" 
           className="w-full h-full object-cover"
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            if (img.src !== defaultBanner) {
+              img.src = defaultBanner;
+            }
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-gaming-bg via-transparent to-transparent" />
       </div>
@@ -139,9 +168,12 @@ export function ClanProfile({
       <div className={`relative p-5 md:p-8 flex ${isMobile ? 'flex-col items-stretch' : 'flex-row items-center'} gap-6 md:gap-8`}>
         {/* Left: Avatar & Info */}
         <div className={`flex ${isMobile ? 'flex-col items-center text-center' : 'flex-row items-center'} gap-5 md:gap-8 flex-1`}>
-          <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+          <div className="relative group">
             {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-25 group-hover:opacity-75 transition duration-1000 ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold' : 'bg-gaming-gold/50'}`}></div>}
-            <div className={`relative ${isMobile ? 'w-24 h-24' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
+            <div 
+              onClick={handleAvatarClick}
+              className={`relative ${isMobile ? 'w-24 h-24' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center cursor-pointer ${getBorderClasses(myMember?.profileBorder)}`}
+            >
               {myMember?.avatarUrl ? (
                 <img 
                   src={myMember.avatarUrl} 
@@ -154,16 +186,58 @@ export function ClanProfile({
                   <span className="text-[8px] md:text-[10px] font-display font-black uppercase text-black leading-tight">Mudar Foto</span>
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                  <Camera className="text-gaming-gold" size={isMobile ? 20 : 32} />
               </div>
             </div>
+
+            {/* Upload Options Menu */}
+            <AnimatePresence>
+              {showUploadOptions && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-48 bg-black/90 border border-white/10 rounded-2xl p-2 z-50 shadow-2xl backdrop-blur-2xl"
+                >
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl transition-all text-left group"
+                  >
+                    <ImageIcon size={18} className="text-blue-400" />
+                    <div>
+                      <p className="text-[9px] font-black uppercase text-white leading-none">Foto Estática</p>
+                      <p className="text-[7px] text-white/30 uppercase mt-1">PNG, JPG, WEBP</p>
+                    </div>
+                  </button>
+                  <div className="h-px bg-white/5 my-1" />
+                  <button 
+                    onClick={() => gifInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl transition-all text-left group"
+                  >
+                    <Star size={18} className="text-gaming-gold animate-pulse" />
+                    <div>
+                      <p className="text-[9px] font-black uppercase text-gaming-gold leading-none">Gif Animado</p>
+                      <p className="text-[7px] text-gaming-gold/40 uppercase mt-1">Exclusivo Nível 1+</p>
+                    </div>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <input 
               type="file" 
               ref={fileInputRef} 
-              onChange={handleFileChange} 
+              onChange={(e) => handleFileChange(e, false)} 
               className="hidden" 
-              accept="image/*" 
+              accept="image/png,image/jpeg,image/webp" 
+            />
+            <input 
+              type="file" 
+              ref={gifInputRef} 
+              onChange={(e) => handleFileChange(e, true)} 
+              className="hidden" 
+              accept="image/gif" 
             />
           </div>
 
@@ -180,7 +254,7 @@ export function ClanProfile({
                 { icon: MapPin, label: "Na Base", action: () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setActiveTab('inicio'); } },
                 { icon: Search, label: "Ver Ranking", action: () => { setActiveTab('inicio'); setTimeout(() => document.getElementById('member-list-section')?.scrollIntoView({ behavior: 'smooth' }), 100); } },
                 { icon: Users, label: "Clã", action: () => setActiveTab('inicio') },
-                { icon: LogOut, label: "Sair", action: () => auth.signOut() }
+                { icon: LogOut, label: "Sair", action: () => logout() }
               ].map((btn) => (
                 <button 
                   key={btn.label} 

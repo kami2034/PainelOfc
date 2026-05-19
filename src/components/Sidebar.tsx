@@ -34,7 +34,7 @@ export function Sidebar({
 }) {
   const { myMember, completeMission, isEcoMode, clan, user } = useClan();
 
-  const isLeader = myMember?.role === 'leader' || user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com';
+  const isLeader = myMember?.role === 'leader' || user?.email === 'ryankevyn3000@gmail.com';
 
   const baseIcons = [
     { icon: Home, id: 'inicio', label: 'Início' },

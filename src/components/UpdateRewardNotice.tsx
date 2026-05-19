@@ -44,10 +44,10 @@ export function UpdateRewardNotice() {
           </div>
           <div className="flex flex-col">
             <h3 className="text-sm md:text-lg font-display font-black uppercase italic text-gaming-gold leading-none mb-1">
-              Recompensa de Atualização!
+              Bônus de Atualização!
             </h3>
             <p className="text-[10px] md:text-xs font-bold uppercase text-white/60 tracking-wider">
-              Agradecemos sua paciência. Resgate seu bônus de <span className="text-white font-black">+50 Moedas</span> agora.
+              Agradecemos imensamente sua paciência. Resgate seu bônus de <span className="text-white font-black">+50 Moedas</span> exclusivo agora.
             </p>
           </div>
         </div>
