@@ -26,8 +26,17 @@ app.use((req, res, next) => {
 
 // --- API ROUTES ---
 
+let dbInitialized = false;
+async function ensureDb() {
+  if (!dbInitialized) {
+    await initDb().catch(err => console.error('[Database] Init failed:', err));
+    dbInitialized = true;
+  }
+}
+
 // Health check endpoint
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  await ensureDb();
   res.json({ status: "ok", message: "Server is running", timestamp: new Date().toISOString() });
 });
 
@@ -57,6 +66,7 @@ const authenticateToken = (req: any, res: any, next: any) => {
 
 // Login Route (Nickname + Password only)
 app.post("/api/auth/login", async (req, res) => {
+  await ensureDb();
   let { nickname, password } = req.body;
   if (!nickname) return res.status(400).json({ error: "Apelido é obrigatório" });
   if (!password) return res.status(400).json({ error: "Senha é obrigatória" });
@@ -93,6 +103,7 @@ app.post("/api/auth/login", async (req, res) => {
 
 // Registration Route (Email + Nickname + Password)
 app.post("/api/auth/register", async (req, res) => {
+  await ensureDb();
   let { email, name, password } = req.body;
   if (!email || !name || !password) {
     return res.status(400).json({ error: "Preencha todos os campos: email, nick e senha." });
@@ -152,6 +163,7 @@ const optionalAuthenticateToken = (req: any, res: any, next: any) => {
 
 // Get Clan Info
 app.get("/api/clan/:id", async (req, res) => {
+  await ensureDb();
   try {
     const clan = await sql`SELECT * FROM clans WHERE id = ${req.params.id}`;
     if (clan.length === 0) return res.status(404).json({ error: "Clan not found" });
@@ -171,6 +183,7 @@ app.get("/api/clan/:id", async (req, res) => {
 
 // Update Clan Info
 app.patch("/api/clan/:id", authenticateToken, async (req: any, res: any) => {
+  await ensureDb();
   const { logo_url, guide_image_post1 } = req.body;
   // Simplified permission check: check if user is leader in next turn
   try {
@@ -192,6 +205,7 @@ app.patch("/api/clan/:id", authenticateToken, async (req: any, res: any) => {
 
 // Get Members
 app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: any, res: any) => {
+  await ensureDb();
   try {
     const members = await sql`
       SELECT * FROM members 
@@ -268,6 +282,7 @@ app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: any, res
 
 // Upsert Member (Join or update)
 app.post("/api/members", authenticateToken, async (req: any, res: any) => {
+  await ensureDb();
   const { name } = req.body;
   const userId = req.user.uid;
 
@@ -308,6 +323,7 @@ app.post("/api/members", authenticateToken, async (req: any, res: any) => {
 
 // Update Member Data
 app.patch("/api/members/me", authenticateToken, async (req: any, res: any) => {
+  await ensureDb();
   const userId = req.user.uid;
   const updates = req.body;
   
@@ -507,8 +523,6 @@ export default app;
 
 async function startServer() {
   if (process.env.VERCEL) {
-     console.log("[Server] Running as Vercel Function - skipping manual listen.");
-     await initDb().catch(err => console.error('[Database] Vercel DB init error:', err));
      return;
   }
 
@@ -535,7 +549,7 @@ async function startServer() {
       } catch (viteErr) {
         console.error("[Server] Failed to create Vite server:", viteErr);
       }
-    } else {
+    } else if (!process.env.VERCEL) {
       console.log("[Server] Configuring static file serving (Production)...");
       const distPath = path.join(process.cwd(), "dist");
       app.use(express.static(distPath));
