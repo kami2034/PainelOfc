@@ -222,13 +222,22 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nickname, password })
     });
-    const data = await res.json();
-    if (res.ok) {
+    
+    const contentType = res.headers.get("content-type");
+    if (res.ok && contentType && contentType.includes("application/json")) {
+      const data = await res.json();
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user_data', JSON.stringify(data.user));
       setUser(data.user);
     } else {
-      throw new Error(data.error || 'Login failed');
+      let errorMessage = 'Login failed';
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        errorMessage = data.error || errorMessage;
+      } else {
+        errorMessage = `Erro do servidor (${res.status}). O serviço pode estar temporariamente indisponível.`;
+      }
+      throw new Error(errorMessage);
     }
   };
 
@@ -238,13 +247,22 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name, password })
     });
-    const data = await res.json();
-    if (res.ok) {
+    
+    const contentType = res.headers.get("content-type");
+    if (res.ok && contentType && contentType.includes("application/json")) {
+      const data = await res.json();
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('user_data', JSON.stringify(data.user));
       setUser(data.user);
     } else {
-      throw new Error(data.error || 'Erro no cadastro');
+      let errorMessage = 'Erro no cadastro';
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        errorMessage = data.error || errorMessage;
+      } else {
+        errorMessage = `Erro do servidor (${res.status}). O serviço pode estar temporariamente indisponível.`;
+      }
+      throw new Error(errorMessage);
     }
   };
 
@@ -312,11 +330,17 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       method: 'DELETE',
       headers: getAuthHeader()
     });
+    
+    const contentType = res.headers.get("content-type");
     if (res.ok) {
       await logout();
     } else {
-      const data = await res.json();
-      throw new Error(data.error || 'Erro ao deletar conta');
+      let errorMessage = 'Erro ao deletar conta';
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        errorMessage = data.error || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
   };
 
