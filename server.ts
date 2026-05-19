@@ -13,6 +13,11 @@ const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret_clan_ordem";
 
+console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
+if (process.env.VERCEL) {
+  console.log(`[Server] Running on Vercel environment`);
+}
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -51,7 +56,7 @@ app.get("/api/db-status", async (req, res) => {
 });
 
 // Auth Middleware
-const authenticateToken = (req: any, res: any, next: any) => {
+const authenticateToken = (req: express.Request & { user?: any }, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -144,7 +149,7 @@ app.post("/api/auth/register", async (req, res) => {
 });
 
 // Auth Middleware - Optional version
-const optionalAuthenticateToken = (req: any, res: any, next: any) => {
+const optionalAuthenticateToken = (req: express.Request & { user?: any }, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -182,12 +187,10 @@ app.get("/api/clan/:id", async (req, res) => {
 });
 
 // Update Clan Info
-app.patch("/api/clan/:id", authenticateToken, async (req: any, res: any) => {
+app.patch("/api/clan/:id", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   await ensureDb();
   const { logo_url, guide_image_post1 } = req.body;
-  // Simplified permission check: check if user is leader in next turn
   try {
-    // Basic leader check (hardcoded for user's email)
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
     if (!isLeader) return res.status(403).json({ error: "Unauthorized" });
 
@@ -204,7 +207,7 @@ app.patch("/api/clan/:id", authenticateToken, async (req: any, res: any) => {
 });
 
 // Get Members
-app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: any, res: any) => {
+app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   await ensureDb();
   try {
     const members = await sql`
@@ -281,7 +284,7 @@ app.get("/api/clan/:id/members", optionalAuthenticateToken, async (req: any, res
 });
 
 // Upsert Member (Join or update)
-app.post("/api/members", authenticateToken, async (req: any, res: any) => {
+app.post("/api/members", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   await ensureDb();
   const { name } = req.body;
   const userId = req.user.uid;
@@ -322,7 +325,7 @@ app.post("/api/members", authenticateToken, async (req: any, res: any) => {
 });
 
 // Update Member Data
-app.patch("/api/members/me", authenticateToken, async (req: any, res: any) => {
+app.patch("/api/members/me", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   await ensureDb();
   const userId = req.user.uid;
   const updates = req.body;
@@ -414,7 +417,7 @@ app.patch("/api/members/me", authenticateToken, async (req: any, res: any) => {
 });
 
 // Theft Reports
-app.get("/api/reports", authenticateToken, async (req: any, res: any) => {
+app.get("/api/reports", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
     if (!isLeader) return res.status(403).json({ error: "Unauthorized" });
@@ -426,7 +429,7 @@ app.get("/api/reports", authenticateToken, async (req: any, res: any) => {
   }
 });
 
-app.post("/api/reports", authenticateToken, async (req: any, res: any) => {
+app.post("/api/reports", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   try {
     const { name, message } = req.body;
     await sql`
@@ -439,7 +442,7 @@ app.post("/api/reports", authenticateToken, async (req: any, res: any) => {
   }
 });
 
-app.delete("/api/reports/:id", authenticateToken, async (req: any, res: any) => {
+app.delete("/api/reports/:id", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
     if (!isLeader) return res.status(403).json({ error: "Unauthorized" });
@@ -452,7 +455,7 @@ app.delete("/api/reports/:id", authenticateToken, async (req: any, res: any) => 
 });
 
 // Ban management
-app.post("/api/bans", authenticateToken, async (req: any, res: any) => {
+app.post("/api/bans", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   const { userId, reason } = req.body;
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
@@ -467,7 +470,7 @@ app.post("/api/bans", authenticateToken, async (req: any, res: any) => {
 });
 
 // Role Management
-app.patch("/api/members/:id/role", authenticateToken, async (req: any, res: any) => {
+app.patch("/api/members/:id/role", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   const { role } = req.body;
   try {
     const isLeader = req.user.email === 'ryankevyn3000@gmail.com';
@@ -489,7 +492,7 @@ app.patch("/api/members/:id/role", authenticateToken, async (req: any, res: any)
 });
 
 // Delete My Account
-app.delete("/api/members/me", authenticateToken, async (req: any, res: any) => {
+app.delete("/api/members/me", authenticateToken, async (req: express.Request & { user?: any }, res: express.Response) => {
   const userId = req.user.uid;
   try {
     // Check if leader - user didn't specify what happens if leader deletes account,
@@ -559,7 +562,7 @@ async function startServer() {
     }
 
     // Global Error Handler
-    app.use((err: any, req: any, res: any, next: any) => {
+    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
       console.error('[Global Error Handler]:', err);
       if (res.headersSent) return next(err);
       res.status(500).json({ 
@@ -591,4 +594,9 @@ process.on('uncaughtException', (err) => {
   console.error('[Uncaught Exception] thrown:', err);
 });
 
-startServer();
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  startServer().catch(err => {
+    console.error("[Server] Critical failure during startup:", err);
+    process.exit(1);
+  });
+}
