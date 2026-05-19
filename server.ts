@@ -503,7 +503,15 @@ app.all("/api/*", (req, res) => {
 
 // --- SERVER STARTUP ---
 
+export default app;
+
 async function startServer() {
+  if (process.env.VERCEL) {
+     console.log("[Server] Running as Vercel Function - skipping manual listen.");
+     await initDb().catch(err => console.error('[Database] Vercel DB init error:', err));
+     return;
+  }
+
   console.log("[Server] Starting initialization sequence...");
 
   try {
